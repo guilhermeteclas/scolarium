@@ -1,0 +1,5 @@
+name = "scolarium-client"
+compatibility_date = "2025-10-13"
+
+[site]
+bucket = "./dist"
