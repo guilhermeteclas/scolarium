@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import Menubar from 'primevue/menubar';
-import { useRouter } from 'vue-router';
 import { ref, onMounted, watch } from 'vue';
-import type { MenuItem } from 'primevue/menuitem';
-import { useAuthStore } from '@/stores/auth';
-import Toast from 'primevue/toast';
-import { useToast } from "primevue/usetoast";
 
+import Toast from 'primevue/toast';
+import Menubar from 'primevue/menubar';
+import type { MenuItem } from 'primevue/menuitem';
+
+import { useRouter } from 'vue-router';
+import { useToast } from "primevue/usetoast";
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const auth = useAuthStore();

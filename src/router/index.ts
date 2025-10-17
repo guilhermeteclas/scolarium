@@ -12,7 +12,7 @@ const routes = [
   {
     path: '/inventories',
     component: () => import('@/views/InventoriesView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, label: 'Inventários' },
   },
   {
     path: '/items',
