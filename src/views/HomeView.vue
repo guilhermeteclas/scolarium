@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
-import type { PostgrestError } from '@supabase/supabase-js'
 
 interface Instrument {
   id: number
@@ -12,12 +11,14 @@ const instruments = ref<Instrument[]>([])
 const errorMsg = ref<string | null>(null)
 
 async function getInstruments() {
-  const { data, error }: { data: Instrument[] | null, error: PostgrestError | null } = await supabase
+  const { data, error } = await supabase
     .from('instruments')
-    .select()
+    .select('id, name')
+    .order('name', { ascending: true })
 
   if (error) {
-    errorMsg.value = error.message
+    console.error('Error fetching instruments:', error)
+    errorMsg.value = 'Sorry, something went wrong while fetching the instruments.'
     instruments.value = []
     return
   }
@@ -32,7 +33,9 @@ onMounted(() => {
 
 <template>
   <div>
+
     <div v-if="errorMsg" class="text-red-500">{{ errorMsg }}</div>
+
     <ul v-else>
       <li v-for="instrument in instruments" :key="instrument.id">{{ instrument.name }}</li>
     </ul>

@@ -2,25 +2,22 @@
 import Menubar from 'primevue/menubar';
 import { useRouter } from 'vue-router';
 import { ref, onMounted, watch } from 'vue';
-import { supabase } from '@/lib/supabaseClient';
 import type { MenuItem } from 'primevue/menuitem';
+import { useAuthStore } from '@/stores/auth';
+import Toast from 'primevue/toast';
+import { useToast } from "primevue/usetoast";
+
 
 const router = useRouter();
-const userEmail = ref<string | null>(null);
-
-async function fetchUser() {
-  const { data } = await supabase.auth.getUser();
-  userEmail.value = data.user?.email ?? null;
-}
-
-onMounted(fetchUser);
-
-supabase.auth.onAuthStateChange(() => {
-  fetchUser();
-  updateMenuItems();
-});
+const auth = useAuthStore();
+const toast = useToast();
 
 const items = ref<MenuItem[]>([]);
+
+onMounted(() => {
+  auth.fetchUser();
+});
+
 
 function updateMenuItems() {
   items.value = [
@@ -49,13 +46,12 @@ function updateMenuItems() {
       icon: 'pi pi-list',
       command: () => router.push('/requests')
     },
-    userEmail.value
+    auth.userEmail
       ? {
         label: 'Sair',
         icon: 'pi pi-sign-out',
         command: async () => {
-          await supabase.auth.signOut();
-          userEmail.value = null;
+          await auth.signOut();
           router.push('/login');
         }
       }
@@ -67,22 +63,32 @@ function updateMenuItems() {
   ];
 }
 
-watch(userEmail, updateMenuItems, { immediate: true });
+watch(() => auth.userEmail, (email, prevEmail) => {
+  updateMenuItems();
+  if (email && !prevEmail) {
+    toast.add({ severity: 'success', summary: 'Login', detail: 'Usuário entrou com sucesso!', life: 3000 });
+  }
+  if (!email && prevEmail) {
+    toast.add({ severity: 'info', summary: 'Logout', detail: 'Usuário saiu.', life: 3000 });
+  }
+}, { immediate: true });
 </script>
 
 <template>
+
   <nav class="p-4">
     <Menubar :model="items">
       <template #end>
-        <div v-if="userEmail" class="text-xs text-gray-500 ml-4">
-          Logado como: {{ userEmail }}
+        <div v-if="auth.userEmail" class="text-xs text-gray-500 ml-4">
+          Logado como: {{ auth.userEmail }}
         </div>
       </template>
     </Menubar>
+
+
   </nav>
   <main class="p-4">
+    <Toast />
     <RouterView />
   </main>
 </template>
-
-<style scoped></style>

@@ -1,34 +1,59 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { supabase } from '@/lib/supabaseClient'
-
-import HomeView from '@/views/HomeView.vue'
-import LoginView from '@/views/LoginView.vue'
-import UsersView from '@/views/UsersView.vue'
-import InventoriesView from '@/views/InventoriesView.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from 'primevue/usetoast'
 
 const routes = [
-  { path: '/', component: HomeView, meta: { label: 'Scolarium' } },
-  { path: '/users', component: UsersView, meta: { label: 'Usuários' } },
-  { path: '/inventories', component: InventoriesView, meta: { label: 'Inventários' } },
-  { path: '/login', component: LoginView, meta: { label: 'Login' } },
+  { path: '/', component: () => import('@/views/HomeView.vue'), meta: { requiresAuth: true } },
+  {
+    path: '/users',
+    component: () => import('@/views/UsersView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/inventories',
+    component: () => import('@/views/InventoriesView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/items',
+    component: () => import('@/views/ItemsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/requests',
+    component: () => import('@/views/RequestsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  { path: '/login', component: () => import('@/views/LoginView.vue') },
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes,
 })
 
 router.beforeEach(async (to, from, next) => {
-  if (to.path === '/login') {
-    return next()
+  const auth = useAuthStore()
+  const toast = useToast()
+
+  // Se não tem usuário, tenta buscar
+  if (!auth.userEmail) {
+    await auth.fetchUser()
   }
 
-  const { data } = await supabase.auth.getUser()
-  if (!data.user) {
-    return next('/login')
+  if (to.meta.requiresAuth && !auth.userEmail) {
+    next('/login')
+    setTimeout(() => {
+      toast.add({
+        severity: 'warn',
+        summary: 'Rota protegida',
+        detail: 'Você precisa estar logado para acessar esta página.',
+        life: 3000,
+      })
+    }, 100)
+  } else {
+    next()
   }
-
-  next()
 })
 
 export default router
