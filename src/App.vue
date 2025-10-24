@@ -27,11 +27,11 @@ function updateMenuItems() {
       icon: 'pi pi-home',
       command: () => router.push('/')
     },
-    {
-      label: 'Usuários',
-      icon: 'pi pi-users',
-      command: () => router.push('/users')
-    },
+    // {
+    //   label: 'Usuários',
+    //   icon: 'pi pi-users',
+    //   command: () => router.push('/users')
+    // },
     {
       label: 'Inventários',
       icon: 'pi pi-warehouse',

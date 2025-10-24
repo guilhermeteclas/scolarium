@@ -21,8 +21,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   supabase.auth.onAuthStateChange(() => {
-    console.log('onAuthStateChanged')
-
     fetchUser()
   })
 

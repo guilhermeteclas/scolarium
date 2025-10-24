@@ -4,11 +4,11 @@ import { useToast } from 'primevue/usetoast'
 
 const routes = [
   { path: '/', component: () => import('@/views/HomeView.vue'), meta: { requiresAuth: true } },
-  {
-    path: '/users',
-    component: () => import('@/views/UsersView.vue'),
-    meta: { requiresAuth: true },
-  },
+  // {
+  //   path: '/users',
+  //   component: () => import('@/views/UsersView.vue'),
+  //   meta: { requiresAuth: true },
+  // },
   {
     path: '/inventories',
     component: () => import('@/views/InventoriesView.vue'),
