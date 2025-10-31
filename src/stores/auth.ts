@@ -1,28 +1,33 @@
+// auth.ts
+
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
+import type { User } from '@supabase/supabase-js'
 
 export const useAuthStore = defineStore('auth', () => {
-  const userEmail = ref<string | null>(null)
+  const user = ref<User | null>(null)
 
   async function fetchUser() {
     const { data: sessionData } = await supabase.auth.getSession()
-    if (sessionData.session?.user?.email) {
-      userEmail.value = sessionData.session.user.email
+    if (sessionData.session?.user) {
+      user.value = sessionData.session.user
       return
     }
+
     const { data } = await supabase.auth.getUser()
-    userEmail.value = data.user?.email ?? null
+
+    user.value = data.user
   }
 
   async function signOut() {
     await supabase.auth.signOut()
-    userEmail.value = null
+    user.value = null
   }
 
   supabase.auth.onAuthStateChange(() => {
     fetchUser()
   })
 
-  return { userEmail, fetchUser, signOut }
+  return { user, fetchUser, signOut }
 })

@@ -4,11 +4,6 @@ import { useToast } from 'primevue/usetoast'
 
 const routes = [
   { path: '/', component: () => import('@/views/HomeView.vue'), meta: { requiresAuth: true } },
-  // {
-  //   path: '/users',
-  //   component: () => import('@/views/UsersView.vue'),
-  //   meta: { requiresAuth: true },
-  // },
   {
     path: '/inventories',
     component: () => import('@/views/InventoriesView.vue'),
@@ -36,12 +31,11 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   const toast = useToast()
 
-  // Se não tem usuário, tenta buscar
-  if (!auth.userEmail) {
+  if (!auth.user) {
     await auth.fetchUser()
   }
 
-  if (to.meta.requiresAuth && !auth.userEmail) {
+  if (to.meta.requiresAuth && !auth.user) {
     next('/login')
     setTimeout(() => {
       toast.add({

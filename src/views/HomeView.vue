@@ -1,43 +1,31 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { supabase } from '@/lib/supabaseClient'
-
-interface Instrument {
-  id: number
-  name: string
-}
-
-const instruments = ref<Instrument[]>([])
-const errorMsg = ref<string | null>(null)
-
-async function getInstruments() {
-  const { data, error } = await supabase
-    .from('instruments')
-    .select('id, name')
-    .order('name', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching instruments:', error)
-    errorMsg.value = 'Sorry, something went wrong while fetching the instruments.'
-    instruments.value = []
-    return
-  }
-
-  instruments.value = data ?? []
-}
-
-onMounted(() => {
-  getInstruments()
-})
+import Card from 'primevue/card';
 </script>
 
 <template>
-  <div>
+  <div class="flex justify-center gap-4">
+    <Card class="mb-4">
+      <template #title>Painel 1</template>
+      <template #content>
+        <p class="m-0">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur error repudiandae numquam
+          deserunt quisquam repellat libero asperiores earum nam nobis, culpa ratione quam perferendis esse, cupiditate
+          neque
+          quas!
+        </p>
+      </template>
+    </Card>
 
-    <div v-if="errorMsg" class="text-red-500">{{ errorMsg }}</div>
-
-    <ul v-else>
-      <li v-for="instrument in instruments" :key="instrument.id">{{ instrument.name }}</li>
-    </ul>
+    <Card>
+      <template #title>Painel 2</template>
+      <template #content>
+        <p class="m-0">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur error repudiandae numquam
+          deserunt quisquam repellat libero asperiores earum nam nobis, culpa ratione quam perferendis esse, cupiditate
+          neque
+          quas!
+        </p>
+      </template>
+    </Card>
   </div>
 </template>
