@@ -2,166 +2,181 @@
 import { ref, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+// Componentes PrimeVue
 import Card from 'primevue/card'
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Textarea from 'primevue/textarea';
-import { useToast } from "primevue/usetoast";
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
+import { useToast } from 'primevue/usetoast'
 
+// Supabase
+import { supabase } from '@/lib/supabaseClient'
+import { useSupabaseFetch } from '@/composables/useSupabaseFetch'
+import type { Inventory, UserInventory } from '@/types'
 
-import { supabase } from '@/lib/supabaseClient';
-import { useSupabaseFetch } from '@/composables/useSupabaseFetch';
-import type { Inventory } from '@/types'; // Assumindo que Inventory possui 'id', 'name', 'description'
-
+// Inicialização de hooks
 const route = useRoute()
-const toast = useToast();
+const toast = useToast()
 
+// ESTADO DE DADOS E CONFIGURAÇÃO
 
-// --- LÓGICA DE FETCH DA TABELA ---
-const { data: inventories, loading, error, refetch } = useSupabaseFetch<Inventory>('inventories');
+const queryString = `
+  id,
+  profiles(
+    first_name,
+    last_name
+  ),
+  inventories(
+    name,
+    description
+  )
+`
 
 const columns = [
   { field: 'id', header: 'ID' },
-  { field: 'name', header: 'Nome' },
-  { field: 'description', header: 'Descrição' },
-];
+  { field: 'inventories.name', header: 'Nome do Inventário' },
+  { field: 'inventories.description', header: 'Descrição do Local' },
+  { field: 'profiles.first_name', header: 'Responsável' },
+]
 
-// --- TOAST PARA ERRO INICIAL DA TABELA ---
-watch(error, (newError) => {
-  if (newError) {
-    toast.add({
-      severity: 'error',
-      summary: 'Erro de Carregamento',
-      detail: `Falha ao buscar inventários: ${newError.message}`,
-      life: 5000
-    });
-  }
-}, { immediate: true });
-
-
-// --- LÓGICA DO MODAL (ADICIONAR) ---
-const displayModal = ref(false);
-
+const displayModal = ref(false)
 const newInventory = reactive({
   name: '',
-  description: ''
-});
+  description: '',
+})
+
+const displayConfirmDelete = ref(false)
+const inventoryToDelete = ref<Inventory | null>(null)
+
+// FETCH DE DADOS (useSupabaseFetch)
+const {
+  data: inventories,
+  loading,
+  error,
+  refetch,
+} = useSupabaseFetch<UserInventory>('user_inventories', queryString)
+
+// Watcher para exibir Toast em caso de erro no fetch
+watch(
+  error,
+  (newError) => {
+    if (newError) {
+      toast.add({
+        severity: 'error',
+        summary: 'Erro de Carregamento',
+        detail: `Falha ao buscar inventários: ${newError.message}`,
+        life: 5000,
+      })
+    }
+  },
+  { immediate: true },
+)
+
+//FUNÇÕES DE CRUD
 
 const openModal = () => {
-  newInventory.name = '';
-  newInventory.description = '';
-  displayModal.value = true;
-};
+  newInventory.name = ''
+  newInventory.description = ''
+  displayModal.value = true
+}
 
 const saveInventory = async () => {
-  // Validação
+  // Validação (manter validação síncrona simples no início)
   if (!newInventory.name) {
-    toast.add({ severity: 'warn', summary: 'Atenção', detail: 'O campo Nome é obrigatório.', life: 3000 });
-    return;
+    toast.add({
+      severity: 'warn',
+      summary: 'Atenção',
+      detail: 'O campo Nome é obrigatório.',
+      life: 3000,
+    })
+    return
   }
 
-  const { error: insertError } = await supabase
-    .from('inventories')
-    .insert([
-      {
-        name: newInventory.name,
-        description: newInventory.description
-      }
-    ]);
-
+  const { error: insertError } = await supabase.from('inventories').insert([
+    {
+      name: newInventory.name,
+      description: newInventory.description,
+    },
+  ])
 
   if (insertError) {
-    console.error('Erro ao inserir novo inventário:', insertError);
+    console.error('Erro ao inserir novo inventário:', insertError)
     toast.add({
       severity: 'error',
       summary: 'Erro ao Salvar',
       detail: `Não foi possível criar o inventário: ${insertError.message}`,
-      life: 5000
-    });
-    return;
+      life: 5000,
+    })
+    return
   }
 
-  // Toast de Sucesso
+  // Sucesso
   toast.add({
     severity: 'success',
     summary: 'Sucesso!',
     detail: `Inventário "${newInventory.name}" adicionado.`,
-    life: 3000
-  });
+    life: 3000,
+  })
 
-  await refetch();
-  displayModal.value = false;
-};
+  displayModal.value = false
+  await refetch() // Recarregar dados após a inserção
+}
 
-
-// --- LÓGICA DE DELEÇÃO E CONFIRMAÇÃO ---
-const displayConfirmDelete = ref(false);
-const inventoryToDelete = ref<Inventory | null>(null);
-
-/**
- * Abre o modal de confirmação de deleção para um inventário específico.
- */
 const confirmDeletion = (inventory: Inventory) => {
-  inventoryToDelete.value = inventory;
-  displayConfirmDelete.value = true;
-};
+  inventoryToDelete.value = inventory
+  displayConfirmDelete.value = true
+}
 
-/**
- * Executa a deleção do registro no Supabase.
- */
 const deleteInventory = async () => {
-  if (!inventoryToDelete.value) return;
+  if (!inventoryToDelete.value || !inventoryToDelete.value.id) return
 
-  const inventoryId = inventoryToDelete.value.id;
-  const inventoryName = inventoryToDelete.value.name;
+  const { id: inventoryId, name: inventoryName } = inventoryToDelete.value
 
-  const { error: deleteError } = await supabase
-    .from('inventories')
-    .delete()
-    .eq('id', inventoryId);
+  const { error: deleteError } = await supabase.from('inventories').delete().eq('id', inventoryId)
 
-  // Fecha o modal antes de esperar o refetch
-  displayConfirmDelete.value = false;
-  inventoryToDelete.value = null;
-
+  // Feedback visual rápido
+  displayConfirmDelete.value = false
+  inventoryToDelete.value = null
 
   if (deleteError) {
-    console.error('Erro ao deletar inventário:', deleteError);
+    console.error('Erro ao deletar inventário:', deleteError)
     toast.add({
       severity: 'error',
       summary: 'Erro na Deleção',
       detail: `Não foi possível deletar "${inventoryName}": ${deleteError.message}`,
-      life: 5000
-    });
-    return;
+      life: 5000,
+    })
+    return
   }
 
-  // Toast de Sucesso
+  // Sucesso
   toast.add({
     severity: 'success',
     summary: 'Sucesso!',
     detail: `Inventário "${inventoryName}" deletado.`,
-    life: 3000
-  });
+    life: 3000,
+  })
 
-  // Recarrega a lista
-  await refetch();
-};
+  await refetch() // Recarrega a lista
+}
 </script>
 
 <template>
   <Card class="shadow-md">
-
     <template #title>
       <div class="p-4 w-full flex justify-between items-center">
         <h1 class="text-primary text-xl font-semibold m-0">
           {{ route.meta.label }}
         </h1>
-
-        <Button label="Adicionar Inventário" icon="pi pi-plus" class="p-button-success" @click="openModal" />
+        <Button
+          label="Adicionar Inventário"
+          icon="pi pi-plus"
+          class="p-button-success"
+          @click="openModal"
+        />
       </div>
     </template>
 
@@ -173,14 +188,24 @@ const deleteInventory = async () => {
         <p class="text-red-500 font-bold">Erro ao carregar dados: {{ error.message }}</p>
         <Button label="Recarregar" @click="refetch" class="mt-3" />
       </div>
+
       <div v-else>
         <DataTable :value="inventories" tableStyle="min-width: 50rem">
-          <Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header"></Column>
+          <Column
+            v-for="col of columns"
+            :key="col.field"
+            :field="col.field"
+            :header="col.header"
+          ></Column>
 
           <Column header="Ações" headerStyle="width: 10rem" class="text-center">
             <template #body="slotProps">
-              <Button icon="pi pi-trash" class="p-button-danger p-button-sm" @click="confirmDeletion(slotProps.data)"
-                aria-label="Deletar" />
+              <Button
+                icon="pi pi-trash"
+                class="p-button-danger p-button-sm"
+                @click="confirmDeletion(slotProps.data)"
+                aria-label="Deletar"
+              />
             </template>
           </Column>
         </DataTable>
@@ -188,8 +213,13 @@ const deleteInventory = async () => {
     </template>
   </Card>
 
-  <Dialog v-model:visible="displayModal" header="Adicionar Novo Inventário" :modal="true" :draggable="false"
-    class="w-full md:w-3/5 lg:w-2/5">
+  <Dialog
+    v-model:visible="displayModal"
+    header="Adicionar Novo Inventário"
+    :modal="true"
+    :draggable="false"
+    class="w-full md:w-3/5 lg:w-2/5"
+  >
     <div class="p-fluid">
       <div class="mb-5">
         <label for="name" class="font-bold block mb-2">Nome</label>
@@ -203,25 +233,46 @@ const deleteInventory = async () => {
     </div>
 
     <template #footer>
-      <Button label="Cancelar" icon="pi pi-times" @click="displayModal = false" class="p-button-text" />
+      <Button
+        label="Cancelar"
+        icon="pi pi-times"
+        @click="displayModal = false"
+        class="p-button-text"
+      />
       <Button label="Salvar" icon="pi pi-check" @click="saveInventory" autofocus />
     </template>
   </Dialog>
 
-  <Dialog v-model:visible="displayConfirmDelete" header="Confirmação de Deleção" :modal="true" :draggable="false"
-    class="w-full md:w-2/5">
+  <Dialog
+    v-model:visible="displayConfirmDelete"
+    header="Confirmação de Deleção"
+    :modal="true"
+    :draggable="false"
+    class="w-full md:w-2/5"
+  >
     <div class="flex items-center">
       <i class="pi pi-exclamation-triangle text-red-500 text-3xl mr-4" />
       <span v-if="inventoryToDelete">
         Você realmente deseja deletar o inventário
-        <b class="text-red-500">{{ inventoryToDelete.name }}</b>?
-        Esta ação é irreversível.
+        <b class="text-red-500">{{ inventoryToDelete.name }}</b
+        >? Esta ação é irreversível.
       </span>
     </div>
 
     <template #footer>
-      <Button label="Não" icon="pi pi-times" @click="displayConfirmDelete = false" class="p-button-text" />
-      <Button label="Sim, Deletar" icon="pi pi-trash" @click="deleteInventory" class="p-button-danger" autofocus />
+      <Button
+        label="Não"
+        icon="pi pi-times"
+        @click="displayConfirmDelete = false"
+        class="p-button-text"
+      />
+      <Button
+        label="Sim, Deletar"
+        icon="pi pi-trash"
+        @click="deleteInventory"
+        class="p-button-danger"
+        autofocus
+      />
     </template>
   </Dialog>
 </template>
