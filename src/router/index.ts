@@ -31,20 +31,26 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   const toast = useToast()
 
-  if (!auth.user) {
-    await auth.fetchUser()
-  }
-
+  // Verifica autenticação apenas se a rota requer auth e não há usuário
   if (to.meta.requiresAuth && !auth.user) {
-    next('/login')
-    setTimeout(() => {
-      toast.add({
-        severity: 'warn',
-        summary: 'Rota protegida',
-        detail: 'Você precisa estar logado para acessar esta página.',
-        life: 3000,
-      })
-    }, 100)
+    try {
+      await auth.fetchUser()
+
+      // Se ainda não há usuário após fetchUser, redireciona para login
+      if (!auth.user) {
+        next('/login')
+        toast.add({
+          severity: 'warn',
+          summary: 'Rota protegida',
+          detail: 'Você precisa estar logado para acessar esta página.',
+          life: 3000,
+        })
+      } else {
+        next()
+      }
+    } catch {
+      next('/login')
+    }
   } else {
     next()
   }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import Toast from 'primevue/toast'
 import Menubar from 'primevue/menubar'
 import Tag from 'primevue/tag'
@@ -10,10 +9,6 @@ import { useNavigation } from '@/composables/useNavigation'
 
 const auth = useAuthStore()
 const { navigationItems, authItem } = useNavigation()
-
-onMounted(() => {
-  auth.fetchUser()
-})
 </script>
 
 <template>

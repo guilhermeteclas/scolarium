@@ -16,34 +16,21 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
-      if (sessionData.session?.user) {
-        user.value = sessionData.session.user
+
+      if (!sessionData.session) {
+        user.value = null
         return
       }
 
-      const { data, error: userError } = await supabase.auth.getUser()
-      user.value = data.user
-
-      // Se houver erro que não seja de sessão ausente, mostramos no toast
-      if (userError && userError.message !== 'Auth session missing!') {
-        toast.add({
-          severity: 'error',
-          summary: 'Erro de autenticação',
-          detail: userError.message,
-          life: 3000,
-        })
-      }
+      user.value = sessionData.session.user
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Erro ao carregar usuário'
-      // Só mostramos erro se não for relacionado à sessão ausente
-      if (!(e instanceof Error) || e.message !== 'Auth session missing!') {
-        toast.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: message,
-          life: 3000,
-        })
-      }
+      toast.add({
+        severity: 'error',
+        summary: 'Erro',
+        detail: message,
+        life: 3000,
+      })
       user.value = null
     } finally {
       loading.value = false
