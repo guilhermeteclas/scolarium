@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 
 // Componentes PrimeVue
@@ -10,36 +10,21 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
-import ProgressSpinner from 'primevue/progressspinner';
+import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 
-// Supabase
-import { supabase } from '@/lib/supabaseClient'
-import { useSupabaseFetch } from '@/composables/useSupabaseFetch'
-import { useAuthStore } from '@/stores/auth'
-
-
+import { useInventories } from '@/composables/useInventories'
 import type { Inventory, UserInventory } from '@/types'
 
 // Inicialização de hooks
 const route = useRoute()
 const toast = useToast()
-const auth = useAuthStore()
+const { loading, createInventory, deleteInventory, updateInventory, fetchInventories } = useInventories()
 
-// ESTADO DE DADOS E CONFIGURAÇÃO
-
-const queryString = `
-  id,
-  profiles(
-    first_name,
-    last_name
-  ),
-  inventories(
-    id,
-    name,
-    description
-  )
-`
+// Estado
+const inventories = ref<UserInventory[]>([])
+const error = ref<Error | null>(null)
+const isEditing = ref(false)
 
 const columns = [
   { field: 'inventories.id', header: 'ID' },
@@ -57,39 +42,48 @@ const newInventory = reactive({
 const displayConfirmDelete = ref(false)
 const inventoryToDelete = ref<Inventory | null>(null)
 
-// FETCH DE DADOS (useSupabaseFetch)
-const {
-  data: inventories,
-  loading,
-  error,
-  refetch,
-} = useSupabaseFetch<UserInventory>('user_inventories', queryString)
+// Função para carregar os dados
+async function loadInventories() {
+  try {
+    inventories.value = await fetchInventories()
+    error.value = null
+  } catch (e) {
+    error.value = e instanceof Error ? e : new Error('Erro ao carregar inventários')
+    toast.add({
+      severity: 'error',
+      summary: 'Erro de Carregamento',
+      detail: error.value.message,
+      life: 5000,
+    })
+  }
+}
 
-// Watcher para exibir Toast em caso de erro no fetch
-watch(
-  error,
-  (newError) => {
-    if (newError) {
-      toast.add({
-        severity: 'error',
-        summary: 'Erro de Carregamento',
-        detail: `Falha ao buscar inventários: ${newError.message}`,
-        life: 5000,
-      })
-    }
-  },
-  { immediate: true },
-)
+// Carregar dados iniciais
+loadInventories()
 
-//FUNÇÕES DE CRUD
-
+// Funções de CRUD
 const openModal = () => {
+  isEditing.value = false
   newInventory.name = ''
   newInventory.description = ''
+  inventoryToDelete.value = null
   displayModal.value = true
 }
 
-const saveInventory = async () => {
+const confirmDeletion = (inventory: Inventory) => {
+  inventoryToDelete.value = inventory
+  displayConfirmDelete.value = true
+}
+
+const handleEdit = (inventory: Inventory) => {
+  isEditing.value = true
+  newInventory.name = inventory.name
+  newInventory.description = inventory.description || ''
+  inventoryToDelete.value = inventory // Reusing this ref to store the inventory being edited
+  displayModal.value = true
+}
+
+const handleSave = async () => {
   if (!newInventory.name) {
     toast.add({
       severity: 'warn',
@@ -99,134 +93,75 @@ const saveInventory = async () => {
     })
     return
   }
-  const userId = auth.user?.id;
 
-  if (!userId) {
-    toast.add({
-      severity: 'error',
-      summary: 'Erro de Autenticação',
-      detail: 'Usuário não logado. Não é possível criar o inventário.',
-      life: 5000,
-    });
-    return;
-  }
-
-  const { data: insertedInventory, error: insertError } = await supabase
-    .from('inventories')
-    .insert([
-      {
+  try {
+    if (isEditing.value && inventoryToDelete.value) {
+      await updateInventory(String(inventoryToDelete.value.id), {
         name: newInventory.name,
         description: newInventory.description,
-      },
-    ])
-    .select('id')
-    .single();
+      })
 
-  if (insertError) {
-    console.error('Erro ao inserir novo inventário:', insertError);
+      toast.add({
+        severity: 'success',
+        summary: 'Sucesso!',
+        detail: `Inventário "${newInventory.name}" atualizado com sucesso.`,
+        life: 3000,
+      })
+    } else {
+      await createInventory({
+        name: newInventory.name,
+        description: newInventory.description,
+      })
+
+      toast.add({
+        severity: 'success',
+        summary: 'Sucesso!',
+        detail: `Inventário "${newInventory.name}" criado com sucesso.`,
+        life: 3000,
+      })
+    }
+
+    displayModal.value = false
+    isEditing.value = false
+    inventoryToDelete.value = null
+    await loadInventories()
+  } catch (e) {
+    const action = isEditing.value ? 'editar' : 'criar'
+    const message = e instanceof Error ? e.message : `Erro ao ${action} inventário`
     toast.add({
       severity: 'error',
-      summary: 'Erro ao Salvar',
-      detail: `Não foi possível criar o inventário: ${insertError.message}`,
+      summary: `Erro ao ${action}`,
+      detail: message,
       life: 5000,
-    });
-    return;
+    })
   }
+}
 
-  const { error: userInventoryError } = await supabase
-    .from('user_inventories')
-    .insert([
-      {
-        inventory_id: insertedInventory.id,
-        profile_id: userId,
-      },
-    ]);
+const handleDelete = async () => {
+  if (!inventoryToDelete.value?.id) return
 
-  if (userInventoryError) {
-    console.error('Erro ao vincular usuário ao inventário:', userInventoryError);
-    toast.add({
-      severity: 'error',
-      summary: 'Alerta Parcial',
-      detail: `O inventário foi criado, mas houve um erro ao atribuí-lo ao usuário: ${userInventoryError.message}`,
-      life: 7000,
-    });
-  } else {
+  try {
+    await deleteInventory(String(inventoryToDelete.value.id))
+
     toast.add({
       severity: 'success',
       summary: 'Sucesso!',
-      detail: `Inventário "${newInventory.name}" adicionado e atribuído ao usuário.`,
+      detail: `Inventário "${inventoryToDelete.value.name}" deletado.`,
       life: 3000,
-    });
-  }
+    })
 
-  displayModal.value = false;
-  await refetch();
-}
-
-const confirmDeletion = (inventory: Inventory) => {
-  inventoryToDelete.value = inventory
-  displayConfirmDelete.value = true
-}
-const deleteInventory = async () => {
-  if (!inventoryToDelete.value || !inventoryToDelete.value.id) return
-
-  const { id: inventoryId, name: inventoryName } = inventoryToDelete.value
-  const userId = auth.user?.id;
-
-  if (!userId) {
-    toast.add({
-      severity: 'error',
-      summary: 'Erro de Autenticação',
-      detail: 'Usuário não logado. Não é possível deletar o inventário.',
-      life: 5000,
-    });
-    return;
-  }
-
-  const { error: deleteUserInventoryError } = await supabase
-    .from('user_inventories')
-    .delete()
-    .eq('inventory_id', inventoryId)
-    .eq('profile_id', userId)
-
-  if (deleteUserInventoryError) {
-    console.error('Erro ao remover permissão do inventário (user_inventories):', deleteUserInventoryError)
+    displayConfirmDelete.value = false
+    inventoryToDelete.value = null
+    await loadInventories()
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Erro ao deletar inventário'
     toast.add({
       severity: 'error',
       summary: 'Erro na Deleção',
-      detail: `Falha ao remover permissão para deletar "${inventoryName}": ${deleteUserInventoryError.message}`,
+      detail: message,
       life: 5000,
     })
-    return
   }
-
-  const { error: deleteError } = await supabase
-    .from('inventories')
-    .delete()
-    .eq('id', inventoryId)
-
-  displayConfirmDelete.value = false
-  inventoryToDelete.value = null
-
-  if (deleteError) {
-    console.error('Erro ao deletar inventário:', deleteError)
-    toast.add({
-      severity: 'error',
-      summary: 'Erro na Deleção',
-      detail: `Não foi possível deletar "${inventoryName}": ${deleteError.message}`,
-      life: 5000,
-    })
-    return
-  }
-
-  toast.add({
-    severity: 'success',
-    summary: 'Sucesso!',
-    detail: `Inventário "${inventoryName}" deletado.`,
-    life: 3000,
-  })
-
-  await refetch()
 }
 </script>
 
@@ -247,7 +182,7 @@ const deleteInventory = async () => {
       </div>
       <div v-else-if="error" class="p-4">
         <p class="text-red-500 font-bold">Erro ao carregar dados: {{ error.message }}</p>
-        <Button label="Recarregar" @click="refetch" class="mt-3" />
+        <Button label="Recarregar" @click="loadInventories" class="mt-3" />
       </div>
 
       <div v-else>
@@ -256,8 +191,12 @@ const deleteInventory = async () => {
 
           <Column header="Ações" headerStyle="width: 10rem" class="text-center">
             <template #body="slotProps">
-              <Button icon="pi pi-trash" class="p-button-danger p-button-sm" @click="confirmDeletion(slotProps.data)"
-                aria-label="Deletar" />
+              <div class="flex gap-2 justify-center">
+                <Button icon="pi pi-pencil" class="p-button-info p-button-sm"
+                  @click="handleEdit(slotProps.data.inventories)" aria-label="Editar" />
+                <Button icon="pi pi-trash" class="p-button-danger p-button-sm"
+                  @click="confirmDeletion(slotProps.data.inventories)" aria-label="Deletar" />
+              </div>
             </template>
           </Column>
         </DataTable>
@@ -265,8 +204,8 @@ const deleteInventory = async () => {
     </template>
   </Card>
 
-  <Dialog v-model:visible="displayModal" header="Adicionar Novo Inventário" :modal="true" :draggable="false"
-    class="w-full md:w-3/5 lg:w-2/5">
+  <Dialog v-model:visible="displayModal" :header="isEditing ? 'Editar Inventário' : 'Adicionar Novo Inventário'"
+    :modal="true" :draggable="false" class="w-full md:w-3/5 lg:w-2/5">
     <div class="p-fluid">
       <div class="mb-5">
         <label for="name" class="font-bold block mb-2">Nome</label>
@@ -281,7 +220,7 @@ const deleteInventory = async () => {
 
     <template #footer>
       <Button label="Cancelar" icon="pi pi-times" @click="displayModal = false" class="p-button-text" />
-      <Button label="Salvar" icon="pi pi-check" @click="saveInventory" autofocus />
+      <Button :label="isEditing ? 'Atualizar' : 'Salvar'" icon="pi pi-check" @click="handleSave" autofocus />
     </template>
   </Dialog>
 
@@ -297,7 +236,7 @@ const deleteInventory = async () => {
 
     <template #footer>
       <Button label="Não" icon="pi pi-times" @click="displayConfirmDelete = false" class="p-button-text" />
-      <Button label="Sim, Deletar" icon="pi pi-trash" @click="deleteInventory" class="p-button-danger" autofocus />
+      <Button label="Sim, Deletar" icon="pi pi-trash" @click="handleDelete" class="p-button-danger" autofocus />
     </template>
   </Dialog>
 </template>
