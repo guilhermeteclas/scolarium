@@ -17,6 +17,8 @@ app.use(PrimeVue, {
   theme: {
     preset: Lara,
   },
+  ripple: true,
+  unstyled: false,
 })
 app.use(ToastService)
 
