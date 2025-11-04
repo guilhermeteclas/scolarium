@@ -87,10 +87,10 @@ const { authItem } = useNavigation()
                 />
                 <div class="flex flex-col">
                   <span class="text-xs font-medium text-surface-900 dark:text-surface-0">
-                    {{ auth.user?.email }}
+                    {{ auth.profile?.first_name }} {{ auth.profile?.last_name }}
                   </span>
                   <span class="text-xs text-surface-500 dark:text-surface-400">
-                    {{ auth.user.role }}
+                    {{ auth.user?.email }}
                   </span>
                 </div>
               </div>

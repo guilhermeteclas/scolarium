@@ -5,11 +5,30 @@ import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
 import type { User } from '@supabase/supabase-js'
 import { useToast } from 'primevue/usetoast'
+import type { Profile } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
+  const profile = ref<Profile | null>(null)
   const loading = ref(false)
   const toast = useToast()
+
+  async function fetchProfile(userId: string) {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+
+      if (error) {
+        console.error('Erro ao buscar profile:', error.message)
+        profile.value = null
+        return
+      }
+
+      profile.value = data
+    } catch (e) {
+      console.error('Erro ao buscar profile:', e)
+      profile.value = null
+    }
+  }
 
   async function fetchUser() {
     loading.value = true
@@ -19,10 +38,14 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (!sessionData.session) {
         user.value = null
+        profile.value = null
         return
       }
 
       user.value = sessionData.session.user
+
+      // Busca o profile do usuário
+      await fetchProfile(sessionData.session.user.id)
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Erro ao carregar usuário'
       toast.add({
@@ -32,6 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
         life: 3000,
       })
       user.value = null
+      profile.value = null
     } finally {
       loading.value = false
     }
@@ -52,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
         return
       }
       user.value = null
+      profile.value = null
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Erro ao fazer logout'
       toast.add({
@@ -69,5 +94,5 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUser()
   })
 
-  return { user, loading, fetchUser, signOut }
+  return { user, profile, loading, fetchUser, signOut }
 })

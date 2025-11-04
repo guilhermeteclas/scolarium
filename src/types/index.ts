@@ -1,6 +1,13 @@
 import type { Ref } from 'vue'
 import { PostgrestError } from '@supabase/supabase-js'
 
+export interface Profile {
+  id: string
+  first_name?: string
+  last_name?: string
+  role?: string
+}
+
 export interface Inventory {
   id: number
   name: string
