@@ -1,0 +1,95 @@
+// usePermissions.ts
+
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+export type UserRole = 'admin' | 'manager' | 'user'
+
+export function usePermissions() {
+  const auth = useAuthStore()
+
+  const userRole = computed<UserRole | null>(() => {
+    const role = (auth.profile?.role as UserRole) || null
+    console.log('[PERMISSIONS] userRole computed:', role, 'profile:', auth.profile)
+    return role
+  })
+
+  const isAdmin = computed(() => {
+    const result = userRole.value === 'admin'
+    console.log('[PERMISSIONS] isAdmin:', result)
+    return result
+  })
+  const isManager = computed(() => {
+    const result = userRole.value === 'manager'
+    console.log('[PERMISSIONS] isManager:', result)
+    return result
+  })
+  const isUser = computed(() => {
+    const result = userRole.value === 'user'
+    console.log('[PERMISSIONS] isUser:', result)
+    return result
+  })
+
+  // Permissões para Dashboard
+  const canViewDashboard = computed(() => {
+    const result = isAdmin.value || isManager.value
+    console.log('[PERMISSIONS] canViewDashboard:', result)
+    return result
+  })
+
+  // Permissões para Inventários
+  const canViewInventories = computed(() => isAdmin.value || isManager.value)
+  const canCreateInventories = computed(() => isAdmin.value || isManager.value)
+  const canEditInventories = computed(() => isAdmin.value || isManager.value)
+  const canDeleteInventories = computed(() => isAdmin.value || isManager.value)
+
+  // Permissões para Itens
+  const canViewItems = computed(() => isAdmin.value || isManager.value)
+  const canCreateItems = computed(() => isAdmin.value || isManager.value)
+  const canEditItems = computed(() => isAdmin.value || isManager.value)
+  const canDeleteItems = computed(() => isAdmin.value || isManager.value)
+
+  // Permissões para Pedidos
+  const canViewRequests = computed(() => true) // Todos podem ver pedidos (mas users veem apenas os seus)
+  const canViewAllRequests = computed(() => isAdmin.value || isManager.value) // Admin e Manager veem todos
+  const canCreateRequests = computed(() => true) // Todos podem criar pedidos
+  const canApproveRequests = computed(() => isAdmin.value || isManager.value)
+  const canDeleteRequests = computed(() => isAdmin.value || isManager.value)
+
+  // Permissões para Usuários
+  const canViewUsers = computed(() => isAdmin.value)
+  const canManageUsers = computed(() => isAdmin.value)
+
+  return {
+    userRole,
+    isAdmin,
+    isManager,
+    isUser,
+
+    // Dashboard
+    canViewDashboard,
+
+    // Inventários
+    canViewInventories,
+    canCreateInventories,
+    canEditInventories,
+    canDeleteInventories,
+
+    // Itens
+    canViewItems,
+    canCreateItems,
+    canEditItems,
+    canDeleteItems,
+
+    // Pedidos
+    canViewRequests,
+    canViewAllRequests,
+    canCreateRequests,
+    canApproveRequests,
+    canDeleteRequests,
+
+    // Usuários
+    canViewUsers,
+    canManageUsers,
+  }
+}

@@ -54,7 +54,7 @@ export function useInventories() {
     return inventory
   }
 
-  async function deleteInventory(inventoryId: string) {
+  async function deleteInventory(inventoryId: number) {
     if (!auth.user?.id) {
       throw new Error('Usuário não autenticado')
     }
@@ -109,7 +109,7 @@ export function useInventories() {
     }
   }
 
-  async function updateInventory(inventoryId: string, data: { name: string; description: string }) {
+  async function updateInventory(inventoryId: number, data: { name: string; description: string }) {
     if (!auth.user?.id) {
       throw new Error('Usuário não autenticado')
     }

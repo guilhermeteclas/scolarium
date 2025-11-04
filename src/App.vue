@@ -5,9 +5,11 @@ import Avatar from 'primevue/avatar'
 import Button from 'primevue/button'
 import { useAuthStore } from '@/stores/auth'
 import { useNavigation } from '@/composables/useNavigation'
+import { usePermissions } from '@/composables/usePermissions'
 
 const auth = useAuthStore()
 const { authItem } = useNavigation()
+const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
 </script>
 
 <template>
@@ -39,6 +41,7 @@ const { authItem } = useNavigation()
           <!-- Menu de Navegação -->
           <div class="flex-1 flex justify-center items-center gap-1">
             <RouterLink
+              v-if="canViewDashboard"
               to="/"
               class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
               active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold"
@@ -47,6 +50,7 @@ const { authItem } = useNavigation()
               <span class="font-medium text-sm">Dashboard</span>
             </RouterLink>
             <RouterLink
+              v-if="canViewInventories"
               to="/inventories"
               class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
               active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold"
@@ -55,6 +59,7 @@ const { authItem } = useNavigation()
               <span class="font-medium text-sm">Inventários</span>
             </RouterLink>
             <RouterLink
+              v-if="canViewItems"
               to="/items"
               class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
               active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold"

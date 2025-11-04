@@ -1,11 +1,12 @@
 import type { Ref } from 'vue'
 import { PostgrestError } from '@supabase/supabase-js'
+import type { UserRole } from '@/composables/usePermissions'
 
 export interface Profile {
   id: string
   first_name?: string
   last_name?: string
-  role?: string
+  role?: UserRole
 }
 
 export interface Inventory {

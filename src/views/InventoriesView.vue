@@ -13,10 +13,12 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 
 import { useInventories } from '@/composables/useInventories'
+import { usePermissions } from '@/composables/usePermissions'
 import type { Inventory, UserInventory } from '@/types'
 
 // Inicialização de hooks
 const toast = useToast()
+const { canCreateInventories, canEditInventories, canDeleteInventories } = usePermissions()
 const { loading, createInventory, deleteInventory, updateInventory, fetchInventories } =
   useInventories()
 
@@ -95,7 +97,7 @@ const handleSave = async () => {
 
   try {
     if (isEditing.value && inventoryToDelete.value) {
-      await updateInventory(String(inventoryToDelete.value.id), {
+      await updateInventory(inventoryToDelete.value.id, {
         name: newInventory.name,
         description: newInventory.description,
       })
@@ -140,7 +142,7 @@ const handleDelete = async () => {
   if (!inventoryToDelete.value?.id) return
 
   try {
-    await deleteInventory(String(inventoryToDelete.value.id))
+    await deleteInventory(inventoryToDelete.value.id)
 
     toast.add({
       severity: 'success',
@@ -185,6 +187,7 @@ const handleDelete = async () => {
           </div>
         </div>
         <Button
+          v-if="canCreateInventories"
           label="Adicionar Inventário"
           icon="pi pi-plus"
           severity="success"
@@ -217,6 +220,7 @@ const handleDelete = async () => {
               <template #body="slotProps">
                 <div class="flex gap-2 justify-center">
                   <Button
+                    v-if="canEditInventories"
                     icon="pi pi-pencil"
                     severity="info"
                     size="small"
@@ -224,6 +228,7 @@ const handleDelete = async () => {
                     aria-label="Editar"
                   />
                   <Button
+                    v-if="canDeleteInventories"
                     icon="pi pi-trash"
                     severity="danger"
                     size="small"
