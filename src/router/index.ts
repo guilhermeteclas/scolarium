@@ -7,12 +7,16 @@ const routes = [
   {
     path: '/',
     component: () => import('@/views/HomeView.vue'),
+  },
+  {
+    path: '/dashboard',
+    component: () => import('@/views/DashView.vue'),
     meta: { requiresAuth: true, requiresPermission: 'canViewDashboard' },
   },
   {
     path: '/inventories',
     component: () => import('@/views/InventoriesView.vue'),
-    meta: { requiresAuth: true, requiresPermission: 'canViewInventories', label: 'Inventários' },
+    meta: { requiresAuth: true, requiresPermission: 'canViewInventories' },
   },
   {
     path: '/items',

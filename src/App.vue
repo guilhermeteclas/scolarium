@@ -28,26 +28,26 @@ const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
             <div class="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-lg">
               <img src="/material-escolar.png" alt="Logo Scolarium" class="w-7 h-7" />
             </div>
-            <div class="flex flex-col">
+            <RouterLink to="/" class="flex flex-col hover:opacity-80 transition-opacity">
               <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
                 Scolarium
               </span>
               <span class="text-xs text-surface-500 dark:text-surface-400">
                 Gestão de Materiais
               </span>
-            </div>
+            </RouterLink>
           </div>
 
           <!-- Menu de Navegação -->
           <div class="flex-1 flex justify-center items-center gap-1">
             <RouterLink
               v-if="canViewDashboard"
-              to="/"
+              to="/dashboard"
               class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
               active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold"
             >
-              <i class="pi pi-home text-base"></i>
-              <span class="font-medium text-sm">Dashboard</span>
+              <i class="pi pi-chart-bar text-base"></i>
+              <span class="font-medium text-sm">Painel</span>
             </RouterLink>
             <RouterLink
               v-if="canViewInventories"
@@ -72,7 +72,7 @@ const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
               class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
               active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold"
             >
-              <i class="pi pi-shopping-cart text-base"></i>
+              <i class="pi pi-list text-base"></i>
               <span class="font-medium text-sm">Pedidos</span>
             </RouterLink>
           </div>
@@ -120,12 +120,12 @@ const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
           <div class="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-lg">
             <img src="/material-escolar.png" alt="Logo Scolarium" class="w-7 h-7" />
           </div>
-          <div class="flex flex-col">
+          <RouterLink to="/" class="flex flex-col hover:opacity-80 transition-opacity">
             <span class="text-lg font-bold text-primary-600 dark:text-primary-400">Scolarium</span>
             <span class="text-xs text-surface-500 dark:text-surface-400">
               Gestão de Materiais
             </span>
-          </div>
+          </RouterLink>
         </div>
         <div class="flex items-center gap-3">
           <ProgressSpinner v-if="auth.loading" class="w-5 h-5" strokeWidth="4" />
