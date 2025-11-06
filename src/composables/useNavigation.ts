@@ -1,7 +1,8 @@
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import type { MenuItem } from 'primevue/menuitem'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import type { MenuItem } from 'primevue/menuitem'
+
+import { useAuthStore } from '@/stores/auth'
 import { createMenuItems } from '@/config/menu'
 
 export function useNavigation() {

@@ -1,5 +1,3 @@
-// usePermissions.ts
-
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -10,30 +8,25 @@ export function usePermissions() {
 
   const userRole = computed<UserRole | null>(() => {
     const role = (auth.profile?.role as UserRole) || null
-    console.log('[PERMISSIONS] userRole computed:', role, 'profile:', auth.profile)
     return role
   })
 
   const isAdmin = computed(() => {
     const result = userRole.value === 'admin'
-    console.log('[PERMISSIONS] isAdmin:', result)
     return result
   })
   const isManager = computed(() => {
     const result = userRole.value === 'manager'
-    console.log('[PERMISSIONS] isManager:', result)
     return result
   })
   const isUser = computed(() => {
     const result = userRole.value === 'user'
-    console.log('[PERMISSIONS] isUser:', result)
     return result
   })
 
   // Permissões para Dashboard
   const canViewDashboard = computed(() => {
     const result = isAdmin.value || isManager.value
-    console.log('[PERMISSIONS] canViewDashboard:', result)
     return result
   })
 

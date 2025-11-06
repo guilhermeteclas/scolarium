@@ -1,5 +1,6 @@
-import type { MenuItem } from 'primevue/menuitem'
 import { useRouter } from 'vue-router'
+import type { MenuItem } from 'primevue/menuitem'
+
 
 export const createMenuItems = (): MenuItem[] => {
   const router = useRouter()

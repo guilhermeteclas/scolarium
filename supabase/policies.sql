@@ -18,16 +18,18 @@ ALTER TABLE request_items ENABLE ROW LEVEL SECURITY;
 -- PROFILES
 -- ============================================
 
--- SELECT: Todos podem ver perfis (evita recursão circular)
+-- SELECT: Todos os usuários autenticados podem ver perfis (evita recursão circular)
 DROP POLICY IF EXISTS "Users can view profiles" ON profiles;
 CREATE POLICY "Users can view profiles"
 ON profiles FOR SELECT
+TO authenticated
 USING (true);
 
 -- UPDATE: Apenas o próprio usuário pode atualizar seu profile
 DROP POLICY IF EXISTS "Users can update profiles" ON profiles;
 CREATE POLICY "Users can update profiles"
 ON profiles FOR UPDATE
+TO authenticated
 USING (id = auth.uid());
 
 -- ============================================
@@ -38,23 +40,20 @@ USING (id = auth.uid());
 DROP POLICY IF EXISTS "Users can view inventories" ON inventories;
 CREATE POLICY "Users can view inventories"
 ON inventories FOR SELECT
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
   (
     (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'manager'
-    AND
-    id IN (SELECT inventory_id FROM user_inventories WHERE profile_id = auth.uid())
-  )
-);
+));
 
--- INSERT: Admin e Manager podem criar (não verifica user_inventories pois ainda não existe)
+-- INSERT: Admin e Manager podem criar
 DROP POLICY IF EXISTS "Users can create inventories" ON inventories;
 CREATE POLICY "Users can create inventories"
 ON inventories FOR INSERT
+TO authenticated
 WITH CHECK (
-  auth.uid() IS NOT NULL
-  AND
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
 );
 
@@ -62,6 +61,7 @@ WITH CHECK (
 DROP POLICY IF EXISTS "Users can update inventories" ON inventories;
 CREATE POLICY "Users can update inventories"
 ON inventories FOR UPDATE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -76,6 +76,7 @@ USING (
 DROP POLICY IF EXISTS "Users can delete inventories" ON inventories;
 CREATE POLICY "Users can delete inventories"
 ON inventories FOR DELETE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -94,6 +95,7 @@ USING (
 DROP POLICY IF EXISTS "Users can view inventory associations" ON user_inventories;
 CREATE POLICY "Users can view inventory associations"
 ON user_inventories FOR SELECT
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -108,6 +110,7 @@ USING (
 DROP POLICY IF EXISTS "Users can create inventory associations" ON user_inventories;
 CREATE POLICY "Users can create inventory associations"
 ON user_inventories FOR INSERT
+TO authenticated
 WITH CHECK (
   (
     (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
@@ -124,6 +127,7 @@ WITH CHECK (
 DROP POLICY IF EXISTS "Users can delete inventory associations" ON user_inventories;
 CREATE POLICY "Users can delete inventory associations"
 ON user_inventories FOR DELETE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -142,6 +146,7 @@ USING (
 DROP POLICY IF EXISTS "Users can view items" ON items;
 CREATE POLICY "Users can view items"
 ON items FOR SELECT
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -156,6 +161,7 @@ USING (
 DROP POLICY IF EXISTS "Users can create items" ON items;
 CREATE POLICY "Users can create items"
 ON items FOR INSERT
+TO authenticated
 WITH CHECK (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -170,6 +176,7 @@ WITH CHECK (
 DROP POLICY IF EXISTS "Users can update items" ON items;
 CREATE POLICY "Users can update items"
 ON items FOR UPDATE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -184,6 +191,7 @@ USING (
 DROP POLICY IF EXISTS "Users can delete items" ON items;
 CREATE POLICY "Users can delete items"
 ON items FOR DELETE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) = 'admin'
   OR
@@ -202,22 +210,25 @@ USING (
 DROP POLICY IF EXISTS "Users can view requests" ON requests;
 CREATE POLICY "Users can view requests"
 ON requests FOR SELECT
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR
   profile_id = auth.uid()
 );
 
--- INSERT: Todos podem criar pedidos
+-- INSERT: Todos os usuários autenticados podem criar pedidos
 DROP POLICY IF EXISTS "Users can create requests" ON requests;
 CREATE POLICY "Users can create requests"
 ON requests FOR INSERT
-WITH CHECK (auth.uid() IS NOT NULL);
+TO authenticated
+WITH CHECK (true);
 
 -- UPDATE: Admin e Manager podem atualizar qualquer pedido, User atualiza apenas os seus
 DROP POLICY IF EXISTS "Users can update requests" ON requests;
 CREATE POLICY "Users can update requests"
 ON requests FOR UPDATE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR
@@ -228,6 +239,7 @@ USING (
 DROP POLICY IF EXISTS "Users can delete requests" ON requests;
 CREATE POLICY "Users can delete requests"
 ON requests FOR DELETE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR
@@ -242,6 +254,7 @@ USING (
 DROP POLICY IF EXISTS "Users can view request items" ON request_items;
 CREATE POLICY "Users can view request items"
 ON request_items FOR SELECT
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR
@@ -252,6 +265,7 @@ USING (
 DROP POLICY IF EXISTS "Users can create request items" ON request_items;
 CREATE POLICY "Users can create request items"
 ON request_items FOR INSERT
+TO authenticated
 WITH CHECK (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR
@@ -262,6 +276,7 @@ WITH CHECK (
 DROP POLICY IF EXISTS "Users can update request items" ON request_items;
 CREATE POLICY "Users can update request items"
 ON request_items FOR UPDATE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR
@@ -272,6 +287,7 @@ USING (
 DROP POLICY IF EXISTS "Users can delete request items" ON request_items;
 CREATE POLICY "Users can delete request items"
 ON request_items FOR DELETE
+TO authenticated
 USING (
   (SELECT role::text FROM profiles WHERE id = auth.uid()) IN ('admin', 'manager')
   OR

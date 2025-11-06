@@ -1,5 +1,3 @@
-import type { Ref } from 'vue'
-import { PostgrestError } from '@supabase/supabase-js'
 import type { UserRole } from '@/composables/usePermissions'
 
 export interface Profile {
@@ -28,13 +26,10 @@ export interface Item {
   inventory_id: number
 }
 
-export interface UseSupabaseFetchResult<T> {
-  data: Ref<T | null>
-  error: Ref<PostgrestError | Error | null>
-  loading: Ref<boolean>
-  refetch: () => Promise<void>
-}
-
-export interface UseSupabaseFetchOptions {
-  enabled?: Ref<boolean> | boolean
+export interface UserView {
+  id: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  role: 'admin' | 'manager' | 'user' | null;
 }
