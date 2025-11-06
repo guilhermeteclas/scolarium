@@ -3,16 +3,10 @@ import { useRouter } from 'vue-router'
 import type { MenuItem } from 'primevue/menuitem'
 
 import { useAuthStore } from '@/stores/auth'
-import { createMenuItems } from '@/config/menu'
 
 export function useNavigation() {
   const router = useRouter()
   const auth = useAuthStore()
-
-  const navigationItems = computed<MenuItem[]>(() => {
-    if (!auth.user) return []
-    return createMenuItems()
-  })
 
   const authItem = computed<MenuItem>(() => {
     if (auth.user) {
@@ -33,7 +27,6 @@ export function useNavigation() {
   })
 
   return {
-    navigationItems,
     authItem,
   }
 }

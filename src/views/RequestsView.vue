@@ -13,9 +13,7 @@ import Button from 'primevue/button'
         <div
           class="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg flex items-center justify-center"
         >
-          <i
-            class="pi pi-shopping-cart text-purple-600 dark:text-purple-400 text-2xl leading-none"
-          ></i>
+          <i class="pi pi-list text-purple-600 dark:text-purple-400 text-2xl leading-none"></i>
         </div>
         <div>
           <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-0 m-0">Pedidos</h1>
