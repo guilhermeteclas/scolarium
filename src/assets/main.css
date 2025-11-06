@@ -1,2 +1,107 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+
+/* Estilos Globais para Scolarium - Versão Simplificada */
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-100);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-500);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: var(--surface-800);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--surface-600);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-500);
+}
+
+/* Suavização de fontes */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Container responsivo consistente */
+.container {
+  max-width: 1400px;
+}
+
+/* Melhorias nos inputs */
+.p-inputtext:focus,
+.p-password-input:focus {
+  box-shadow: 0 0 0 2px var(--primary-200);
+  border-color: var(--primary-500);
+}
+
+.dark .p-inputtext:focus,
+.dark .p-password-input:focus {
+  box-shadow: 0 0 0 2px rgba(var(--primary-500), 0.2);
+}
+
+/* Toast melhorado */
+.p-toast .p-toast-message {
+  border-radius: 0.5rem;
+}
+
+/* Remover efeitos excessivos dos cards */
+.p-card {
+  box-shadow: none;
+}
+
+/* Remover transformações de botões */
+.p-button {
+  box-shadow: none;
+}
+
+.p-button:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+/* Desabilitar todas as animações e transições excessivas */
+.p-card:hover {
+  transform: none;
+}
+
+/* Correção global de alinhamento de ícones PrimeIcons */
+.pi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Garantir alinhamento correto de ícones em botões */
+.p-button .p-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Corrigir alinhamento em containers flex */
+.flex .pi {
+  line-height: 1;
+  vertical-align: baseline;
+}
