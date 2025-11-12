@@ -34,3 +34,13 @@ export interface UserView {
   role: 'admin' | 'manager' | 'user' | null;
 }
 
+export interface Request {
+  id: number;
+  details: string;
+  date: Date;
+  reservation_start: Date;
+  reservation_end: Date;
+  status: 'open' | 'in_progress' | 'pending' | 'ready' | 'completed' | 'rejected' | 'cancelled' | null;
+  profile_id: string;
+}
+

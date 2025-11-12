@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
-import type { Inventory, Item } from '@/types'
+import type { Item } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 
 type ItemInsert = Omit<Item, 'id'>
