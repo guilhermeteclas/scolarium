@@ -218,7 +218,7 @@ const handleDelete = async () => {
 
             <Column header="Ações" headerStyle="width: 10rem" class="text-center">
               <template #body="slotProps">
-                <div class="flex gap-2 justify-center">
+                <div class="flex gap-2">
                   <Button
                     v-if="canEditInventories"
                     icon="pi pi-pencil"
@@ -284,8 +284,8 @@ const handleDelete = async () => {
         <i class="pi pi-exclamation-triangle text-red-500 text-3xl mr-4" />
         <span v-if="inventoryToDelete">
           Você realmente deseja deletar o inventário
-          <b class="text-red-500">{{ inventoryToDelete.name }}</b
-          >? Esta ação é irreversível.
+          <b class="text-red-500">{{ inventoryToDelete.name }}</b 
+          >? Esta ação é irreversível. Todos os itens vinculados a esse inventátrio também serão excluidos.
         </span>
       </div>
 
