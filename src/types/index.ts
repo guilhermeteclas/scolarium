@@ -21,7 +21,7 @@ export interface UserInventory {
 export interface Item {
   id: number
   name: string
-  type: string
+  type: 'material' | 'service' | 'equipment' | null;
   quantity: number
   inventory_id: number
 }
@@ -33,3 +33,4 @@ export interface UserView {
   phone: string | null;
   role: 'admin' | 'manager' | 'user' | null;
 }
+
