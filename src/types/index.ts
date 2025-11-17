@@ -1,4 +1,4 @@
-import type { UserRole } from '@/composables/usePermissions'
+export type UserRole = 'admin' | 'manager' | 'user'
 
 export interface Profile {
   id: string

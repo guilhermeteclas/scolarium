@@ -1,7 +1,6 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-
-export type UserRole = 'admin' | 'manager' | 'user'
+import type { UserRole } from '@/types'
 
 export function usePermissions() {
   const auth = useAuthStore()

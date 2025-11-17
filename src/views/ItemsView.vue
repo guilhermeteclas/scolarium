@@ -17,10 +17,7 @@ import { usePermissions } from '@/composables/usePermissions'
 import { useItems } from '@/composables/useItems'
 import { useInventories } from '@/composables/useInventories'
 
-import { useAuthStore } from '@/stores/auth'
-
 import type { Inventory, Item } from '@/types'
-
 
 const toast = useToast()
 const { canCreateItems, canEditItems, canDeleteItems } = usePermissions()
@@ -50,7 +47,7 @@ function typeLabel(t: Item['type']): string {
 }
 
 //type UserInventory = { id: number; name: string }
-const auth = useAuthStore()
+
 const inventories = ref<Inventory[]>([])
 
 const error = ref<Error | null>(null)
@@ -62,7 +59,6 @@ const columns = [
   { field: 'quantity', header: 'Quantidade' },
   { field: 'inventory.name', header: 'Inventário' },
 ]
-
 
 const displayModal = ref(false)
 

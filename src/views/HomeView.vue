@@ -103,7 +103,7 @@ function navigateToDashboard() {
     </div>
 
     <!-- CTA Section -->
-    <div class="bg-surface-0 dark:bg-surface-900 py-16">
+    <div v-if="!auth.user" class="bg-surface-0 dark:bg-surface-900 py-16">
       <div class="container mx-auto px-4">
         <div class="max-w-3xl mx-auto text-center space-y-6">
           <h2 class="text-3xl md:text-4xl font-bold text-surface-900 dark:text-surface-0">
