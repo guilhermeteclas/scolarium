@@ -14,15 +14,18 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 
 import { usePermissions } from '@/composables/usePermissions'
-import type { Item } from '@/types'
 import { useItems } from '@/composables/useItems'
+import { useInventories } from '@/composables/useInventories'
 
-import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
+
+import type { Inventory, Item } from '@/types'
+
 
 const toast = useToast()
 const { canCreateItems, canEditItems, canDeleteItems } = usePermissions()
 const { loading, createItems, fetchItems, updateItem, deleteItem } = useItems()
+const { fetchInventories } = useInventories()
 
 
 type ItemWithInventory = Item & { inventory: { id: number; name: string } | null }
@@ -46,9 +49,9 @@ function typeLabel(t: Item['type']): string {
   return t ? TYPE_LABEL[t as ItemType] : '—'
 }
 
-type UserInventory = { id: number; name: string }
+//type UserInventory = { id: number; name: string }
 const auth = useAuthStore()
-const inventories = ref<UserInventory[]>([])
+const inventories = ref<Inventory[]>([])
 
 const error = ref<Error | null>(null)
 const isEditing = ref(false)
@@ -65,14 +68,14 @@ const displayModal = ref(false)
 
 type FormItem = {
   name: string
-  type: Item['type']                
+  type: Item['type']
   quantity: number
   inventory_id: number | null
 }
 
 const newItem = reactive<FormItem>({
   name: '',
-  type: null,                       
+  type: null,
   quantity: 0,
   inventory_id: null,
 })
@@ -94,35 +97,21 @@ async function loadItems() {
     })
   }
 }
-
 async function loadInventories() {
-
   try {
-    if (!auth.user) throw new Error('Usuário não autenticado')
-
-    const { data, error } = await supabase
-      .from('user_inventories')
-      .select(`
-        inventories!inner (
-          id,
-          name
-        )
-      `)
-      .eq('profile_id', auth.user.id)
-
-    if (error) throw error
-
-    inventories.value = (data ?? [])
-      .map((row: any) => row.inventories)
-      .filter(Boolean)
-      .map((inv: any) => ({ id: inv.id, name: inv.name }))
-
+    inventories.value = await fetchInventories()
+    error.value = null
   } catch (e) {
-    console.error('loadInventories error:', e)
     error.value = e instanceof Error ? e : new Error('Erro ao carregar inventários')
-    toast.add({ severity: 'error', summary: 'Erro de Carregamento', detail: error.value.message, life: 5000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Erro de Carregamento',
+      detail: error.value.message,
+      life: 5000,
+    })
   }
 }
+
 loadItems()
 loadInventories()
 
@@ -307,41 +296,41 @@ const handleDelete = async () => {
           <label for="type" class="font-bold block mb-2">Tipo</label>
           <Dropdown id="type" v-model="newItem.type" :options="TYPE_OPTIONS" optionLabel="label" optionValue="value"
             placeholder="Selecione o tipo" class="w-full" />
-         </div>
+        </div>
 
-      <div class="mb-5">
-        <label for="quantity" class="font-bold block mb-2">Quantidade</label>
-        <InputNumber id="quantity" v-model="newItem.quantity" class="w-full" :required="true" />
+        <div class="mb-5">
+          <label for="quantity" class="font-bold block mb-2">Quantidade</label>
+          <InputNumber id="quantity" v-model="newItem.quantity" class="w-full" :required="true" />
+        </div>
+
+        <div class="mb-5">
+          <label for="inventary" class="font-bold block mb-2">Inventário</label>
+          <Dropdown v-model="newItem.inventory_id" :options="inventories" optionLabel="name" optionValue="id"
+            placeholder="Selecione um inventário" class="w-full" id="inventary" />
+        </div>
       </div>
 
-      <div class="mb-5">
-        <label for="inventary" class="font-bold block mb-2">Inventário</label>
-        <Dropdown v-model="newItem.inventory_id" :options="inventories" optionLabel="name" optionValue="id"
-          placeholder="Selecione um inventário" class="w-full" id="inventary" />
+      <template #footer>
+        <Button label="Cancelar" icon="pi pi-times" @click="displayModal = false" text />
+        <Button :label="isEditing ? 'Atualizar' : 'Salvar'" icon="pi pi-check" @click="handleSave" autofocus />
+      </template>
+    </Dialog>
+
+    <Dialog v-model:visible="displayConfirmDelete" header="Confirmação de Deleção" :modal="true" :draggable="false"
+      class="w-full md:w-2/5">
+      <div class="flex items-center">
+        <i class="pi pi-exclamation-triangle text-red-500 text-3xl mr-4" />
+        <span v-if="itemWhithId">
+          Você realmente deseja deletar o inventário
+          <b class="text-red-500">{{ itemWhithId.name }}</b>? Esta ação é irreversível.
+        </span>
       </div>
-  </div>
 
-  <template #footer>
-    <Button label="Cancelar" icon="pi pi-times" @click="displayModal = false" text />
-    <Button :label="isEditing ? 'Atualizar' : 'Salvar'" icon="pi pi-check" @click="handleSave" autofocus />
-  </template>
-  </Dialog>
-
-  <Dialog v-model:visible="displayConfirmDelete" header="Confirmação de Deleção" :modal="true" :draggable="false"
-    class="w-full md:w-2/5">
-    <div class="flex items-center">
-      <i class="pi pi-exclamation-triangle text-red-500 text-3xl mr-4" />
-      <span v-if="itemWhithId">
-        Você realmente deseja deletar o inventário
-        <b class="text-red-500">{{ itemWhithId.name }}</b>? Esta ação é irreversível.
-      </span>
-    </div>
-
-    <template #footer>
-      <Button label="Não" icon="pi pi-times" @click="displayConfirmDelete = false" text />
-      <Button label="Sim, Deletar" icon="pi pi-trash" @click="handleDelete" severity="danger" autofocus />
-    </template>
-  </Dialog>
+      <template #footer>
+        <Button label="Não" icon="pi pi-times" @click="displayConfirmDelete = false" text />
+        <Button label="Sim, Deletar" icon="pi pi-trash" @click="handleDelete" severity="danger" autofocus />
+      </template>
+    </Dialog>
   </div>
 </template>
 

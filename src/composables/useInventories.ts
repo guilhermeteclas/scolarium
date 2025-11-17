@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
-import type { UserInventory } from '@/types'
+import type { Inventory, UserInventory } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 
 export function useInventories() {
@@ -21,6 +21,23 @@ export function useInventories() {
   `
 
   async function fetchInventories() {
+    if (!auth.user) {
+      throw new Error('Usuário não autenticado')
+    }
+    loading.value = true
+    try {
+      const { data, error } = await supabase.from('inventories').select()
+      if (error) throw error
+      return data as unknown as Inventory[]
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao carregar inventários'
+      throw new Error(message)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchUserInventories() {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
@@ -69,7 +86,6 @@ export function useInventories() {
     return inventory
   }
 
-
   async function updateInventory(inventoryId: number, data: { name: string; description: string }) {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
@@ -115,6 +131,7 @@ export function useInventories() {
     createInventory,
     deleteInventory,
     fetchInventories,
+    fetchUserInventories,
     updateInventory,
   }
 }

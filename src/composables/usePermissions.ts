@@ -26,7 +26,8 @@ export function usePermissions() {
 
   // Permissões para Dashboard
   const canViewDashboard = computed(() => {
-    const result = isAdmin.value || isManager.value
+    const result = isAdmin.value
+    //const result = isAdmin.value || isManager.value
     return result
   })
 

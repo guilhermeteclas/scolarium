@@ -18,19 +18,22 @@ export interface UserInventory {
   inventory_id: number
   profile_id: number
 }
+
+export interface SupabaseInventoryRow {
+  inventories: Inventory
+}
 export interface Item {
   id: number
   name: string
-  type: 'material' | 'service' | 'equipment' | null;
+  type: 'material' | 'service' | 'equipment' | null
   quantity: number
   inventory_id: number
 }
 
 export interface UserView {
-  id: string;
-  name: string | null;
-  email: string;
-  phone: string | null;
-  role: 'admin' | 'manager' | 'user' | null;
+  id: string
+  name: string | null
+  email: string
+  phone: string | null
+  role: 'admin' | 'manager' | 'user' | null
 }
-

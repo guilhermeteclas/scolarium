@@ -105,6 +105,18 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
+  // Impede acesso à rota de login se já estiver logado
+  if (to.path === '/login' && auth.user) {
+    next('/dashboard')
+    toast.add({
+      severity: 'info',
+      summary: 'Já está logado',
+      detail: 'Você já está logado e foi redirecionado.',
+      life: 3000,
+    })
+    return
+  }
+
   next()
 })
 
