@@ -44,3 +44,13 @@ export interface Request {
   profile_id: string;
 }
 
+export interface RequestItem{
+  id: number;
+  request_id: number;
+  item_id: number;
+  quantity: number;
+  checked_out: number;
+  returned: number
+}
+
+

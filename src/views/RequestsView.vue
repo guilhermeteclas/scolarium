@@ -5,14 +5,19 @@ import Button from 'primevue/button'
 import DataView from 'primevue/dataview'
 import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
-import type { Request } from '@/types'
+import Dialog from 'primevue/dialog'
+import type { Request, RequestItem } from '@/types'
 import { useRequests } from '@/composables/useRequests'
 
 const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
 const toast = useToast()
-const { loading, fetchRequests } = useRequests()
+const { loading, fetchRequests, fetchItemsRequest } = useRequests()
 
+const showItemsDialog = ref(false)
+const itemsRequest = ref<any[]>([])
+const itemsLoading = ref(false)
+const currentRequestId = ref<number | null>(null)
 
 type StatusRequest = NonNullable<Request['status']>
 const STATUS_OPTIONS = [
@@ -39,7 +44,7 @@ function statusClass(status?: string) {
     'bg-teal-100  text-teal-800 dark:bg-teal-700/40  dark:text-teal-200': status === 'ready',
     'bg-green-100 text-green-800 dark:bg-green-700/40 dark:text-green-200': status === 'completed',
     'bg-red-100   text-red-800  dark:bg-red-700/40   dark:text-red-200': status === 'rejected',
-    'bg-slate-200 text-slate-800 dark:bg-slate-700/40 dark:text-slate-200': status === 'cancelled',
+    'bg-red-200 text-red-800 dark:bg-red-700/40 dark:text-red-200': status === 'cancelled',
   }
 }
 
@@ -56,6 +61,30 @@ async function loadRequests() {
   }
 }
 loadRequests()
+
+
+async function openItems(requestId: number) {
+  try {
+    currentRequestId.value = requestId
+    showItemsDialog.value = true
+    itemsLoading.value = true
+
+    const items = await fetchItemsRequest(requestId)
+    itemsRequest.value = items
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error('Erro ao carregar itens do pedido')
+    toast.add({
+      severity: 'error',
+      summary: 'Erro ao carregar itens',
+      detail: err.message,
+      life: 5000,
+    })
+    showItemsDialog.value = false
+  } finally {
+    itemsLoading.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -103,7 +132,7 @@ loadRequests()
                         hover:border-primary-400 transition-all">
 
                     <div class="flex items-start justify-between mb-3">
-                      <span class="text-xl font-medium">ID: {{ r.id }}</span>
+                      <span class="text-xl font-medium">Pedido {{ r.id }}</span>
                       <span class="text-xl font-semibold px-2 py-1 rounded-md" :class="statusClass(r.status)">
                         {{ statusLabel(r.status) }}
                       </span>
@@ -127,7 +156,8 @@ loadRequests()
                     </div>
 
                     <div class="mt-2 flex justify-end">
-                      <Button class="m-2" icon="pi pi-shopping-cart" severity="sucess" size="large" aria-label="Editar" />
+                      <Button class="m-2" icon="pi pi-shopping-cart" severity="sucess" size="large" aria-label="Itens"
+                        @click="openItems(r.id)" />
                       <Button class="m-2" icon="pi pi-pencil" severity="info" size="large" aria-label="Editar" />
                       <Button class="m-2" icon="pi pi-trash" severity="danger" size="large" aria-label="Deletar" />
                     </div>
@@ -144,6 +174,38 @@ loadRequests()
         </div>
       </template>
     </Card>
+    <Dialog v-model:visible="showItemsDialog" modal :style="{ width: '40%'}"
+      :header="currentRequestId ? `Itens Pedido ${currentRequestId}` : 'Itens do pedido'">
+      <div v-if="itemsLoading" class="flex justify-center py-4">
+        <ProgressSpinner />
+      </div>
+
+      <div v-else-if="!itemsRequest.length" class="text-center text-surface-500">
+        Nenhum item encontrado para este pedido.
+      </div>
+
+      <div v-else class="space-y-2">
+        <div v-for="item in itemsRequest" :key="item.id"
+          class="flex items-center justify-between border-b border-surface-200 dark:border-surface-700 pb-2">
+          <div class="flex flex-col">
+            <span class="text-lg">
+              Item: {{ item.item_id }} - {{ item.item.name}}
+            </span>
+            <span class="text-surface-500">
+              Verificado: {{ item.checked_out }} 
+            </span>
+            <span class="text-surface-500">
+              Devolvido: {{ item.returned }}
+            </span>
+          </div>
+          <span class="font-semibold">
+            Quantidade: {{ item.quantity }}
+          </span>
+        </div>
+      </div>
+    </Dialog>
+
+
   </div>
 </template>
 
