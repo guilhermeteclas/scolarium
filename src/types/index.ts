@@ -38,23 +38,30 @@ export interface UserView {
   role: 'admin' | 'manager' | 'user' | null
 }
 
-
 export interface Request {
-  id: number;
-  details: string;
-  date: Date;
-  reservation_start: Date;
-  reservation_end: Date;
-  status: 'open' | 'in_progress' | 'pending' | 'ready' | 'completed' | 'rejected' | 'cancelled' | null;
-  profile_id: string;
+  id: number
+  details: string
+  date: Date
+  reservation_start: Date
+  reservation_end: Date
+  status:
+    | 'open'
+    | 'in_progress'
+    | 'pending'
+    | 'ready'
+    | 'completed'
+    | 'rejected'
+    | 'cancelled'
+    | null
+  profile_id: string
 }
 
-export interface RequestItem{
-  id: number;
-  request_id: number;
-  item_id: number;
-  quantity: number;
-  checked_out: number;
+export interface RequestItems {
+  id: number
+  request_id: number
+  item_id: number
+  quantity: number
+  checked_out: number
   returned: number
+  item: Item | null
 }
-

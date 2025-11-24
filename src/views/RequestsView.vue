@@ -6,50 +6,22 @@ import DataView from 'primevue/dataview'
 import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
-import type { Request, RequestItem } from '@/types'
+import type { Request, RequestItems } from '@/types'
 import { useRequests } from '@/composables/useRequests'
+import { formatDate } from '@/utils/dateFormatter'
+import { getStatusLabel, getStatusClass } from '@/utils/requestStatus'
 
 const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
 const toast = useToast()
-const { loading, fetchRequests, fetchItemsRequest } = useRequests()
+const { loading, fetchRequests, fetchRequestItems } = useRequests()
 
 const showItemsDialog = ref(false)
-const itemsRequest = ref<any[]>([])
+const itemsRequest = ref<RequestItems[]>([])
 const itemsLoading = ref(false)
 const currentRequestId = ref<number | null>(null)
 
-type StatusRequest = NonNullable<Request['status']>
-const STATUS_OPTIONS = [
-  { label: 'Aberto', value: 'open' },
-  { label: 'Em andamento', value: 'in_progress' },
-  { label: 'Pendente', value: 'pending' },
-  { label: 'Pronto', value: 'ready' },
-  { label: 'Concluído', value: 'completed' },
-  { label: 'Rejeitado', value: 'rejected' },
-  { label: 'Cancelado', value: 'cancelled' },
-] as const
-
-const STATUS_LABEL = Object.fromEntries(STATUS_OPTIONS.map(o => [o.value, o.label])) as Record<StatusRequest, string>
-function statusLabel(s: Request['status']): string {
-  return s ? STATUS_LABEL[s as StatusRequest] : '—'
-}
-
-// cores coerentes com seus statuses
-function statusClass(status?: string) {
-  return {
-    'bg-gray-100  text-gray-800 dark:bg-gray-700/40  dark:text-gray-200': status === 'open',
-    'bg-blue-100  text-blue-800 dark:bg-blue-700/40  dark:text-blue-200': status === 'in_progress',
-    'bg-yellow-100 text-yellow-800 dark:bg-yellow-700/40 dark:text-yellow-200': status === 'pending',
-    'bg-teal-100  text-teal-800 dark:bg-teal-700/40  dark:text-teal-200': status === 'ready',
-    'bg-green-100 text-green-800 dark:bg-green-700/40 dark:text-green-200': status === 'completed',
-    'bg-red-100   text-red-800  dark:bg-red-700/40   dark:text-red-200': status === 'rejected',
-    'bg-red-200 text-red-800 dark:bg-red-700/40 dark:text-red-200': status === 'cancelled',
-  }
-}
-
-const fmt = (d?: string | Date) =>
-  d ? new Date(d).toLocaleDateString('pt-BR') : '—'
+const fmt = formatDate
 
 async function loadRequests() {
   try {
@@ -69,7 +41,7 @@ async function openItems(requestId: number) {
     showItemsDialog.value = true
     itemsLoading.value = true
 
-    const items = await fetchItemsRequest(requestId)
+    const items = await fetchRequestItems(requestId)
     itemsRequest.value = items
   } catch (e) {
     const err = e instanceof Error ? e : new Error('Erro ao carregar itens do pedido')
@@ -119,6 +91,7 @@ async function openItems(requestId: number) {
         </div>
 
         <div v-else>
+
           <DataView :value="requests" layout="grid" :rows="6" paginatorTemplate="PrevPageLink PageLinks NextPageLink"
             class="rounded-xl overflow-hidden">
 
@@ -130,11 +103,10 @@ async function openItems(requestId: number) {
                   <div class="cardPretty group h-full w-full p-5 rounded-xl border border-surface-200 dark:border-surface-700
                         bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))]
                         hover:border-primary-400 transition-all">
-
                     <div class="flex items-start justify-between mb-3">
                       <span class="text-xl font-medium">Pedido {{ r.id }}</span>
-                      <span class="text-xl font-semibold px-2 py-1 rounded-md" :class="statusClass(r.status)">
-                        {{ statusLabel(r.status) }}
+                      <span class="text-xl font-semibold px-2 py-1 rounded-md" :class="getStatusClass(r.status)">
+                        {{ getStatusLabel(r.status) }}
                       </span>
                     </div>
 
@@ -153,10 +125,14 @@ async function openItems(requestId: number) {
                         <i class="pi pi-user"></i>
                         <span class="truncate">{{ r.profiles.first_name }} {{ r.profiles.last_name }}</span>
                       </p>
+                      <p class="text-xl m-0 mb-2 flex items-center gap-2">
+                        <i class="pi pi-info-circle"></i>
+                        <span class="truncate">{{ r.details }} aqui </span>
+                      </p>
                     </div>
 
                     <div class="mt-2 flex justify-end">
-                      <Button class="m-2" icon="pi pi-shopping-cart" severity="sucess" size="large" aria-label="Itens"
+                      <Button class="m-2" icon="pi pi-eye" severity="sucess" size="large" aria-label="Itens"
                         @click="openItems(r.id)" />
                       <Button class="m-2" icon="pi pi-pencil" severity="info" size="large" aria-label="Editar" />
                       <Button class="m-2" icon="pi pi-trash" severity="danger" size="large" aria-label="Deletar" />
@@ -174,8 +150,8 @@ async function openItems(requestId: number) {
         </div>
       </template>
     </Card>
-    <Dialog v-model:visible="showItemsDialog" modal :style="{ width: '40%'}"
-      :header="currentRequestId ? `Itens Pedido ${currentRequestId}` : 'Itens do pedido'">
+    <Dialog v-model:visible="showItemsDialog" modal :style="{ width: '40%' }"
+      :header="currentRequestId ? `Itens - Pedido ${currentRequestId}` : 'Itens do pedido'">
       <div v-if="itemsLoading" class="flex justify-center py-4">
         <ProgressSpinner />
       </div>
@@ -184,23 +160,22 @@ async function openItems(requestId: number) {
         Nenhum item encontrado para este pedido.
       </div>
 
-      <div v-else class="space-y-2">
+      <div v-else class="space-y-3">
         <div v-for="item in itemsRequest" :key="item.id"
-          class="flex items-center justify-between border-b border-surface-200 dark:border-surface-700 pb-2">
-          <div class="flex flex-col">
-            <span class="text-lg">
-              Item: {{ item.item_id }} - {{ item.item.name}}
+          class="pb-3 border-b border-surface-200 dark:border-surface-700 last:border-b-0">
+          <div class="flex items-start justify-between gap-4 mb-2">
+            <span class="text-lg font-medium">
+              {{ item.item?.name ?? '—' }}
             </span>
-            <span class="text-surface-500">
-              Verificado: {{ item.checked_out }} 
-            </span>
-            <span class="text-surface-500">
-              Devolvido: {{ item.returned }}
+            <span class="text-lg font-semibold text-primary-600 dark:text-primary-400 whitespace-nowrap">
+              {{ item.quantity }} unidade(s)
             </span>
           </div>
-          <span class="font-semibold">
-            Quantidade: {{ item.quantity }}
-          </span>
+
+          <div class="flex gap-4 text-sm text-surface-500 dark:text-surface-400">
+            <span>Retirado: <span class="font-medium">{{ item.checked_out || '-' }}</span></span>
+            <span>Devolvido: <span class="font-medium">{{ item.returned || '-' }}</span></span>
+          </div>
         </div>
       </div>
     </Dialog>
