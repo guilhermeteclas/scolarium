@@ -132,7 +132,7 @@ async function openItems(requestId: number) {
                       </p>
                       <p class="text-xl m-0 mb-2 flex items-center gap-2">
                         <i class="pi pi-info-circle"></i>
-                        <span class="truncate">{{ r.details }} aqui </span>
+                        <span class="truncate">{{ r.details }} </span>
                       </p>
                     </div>
 
