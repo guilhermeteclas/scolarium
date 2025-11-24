@@ -1,20 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import DataView from 'primevue/dataview'
 import ProgressSpinner from 'primevue/progressspinner'
-import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
-import type { Request, RequestItems } from '@/types'
+
+import { useToast } from 'primevue/usetoast'
 import { useRequests } from '@/composables/useRequests'
+import { usePermissions } from '@/composables/usePermissions'
+
 import { formatDate } from '@/utils/dateFormatter'
 import { getStatusLabel, getStatusClass } from '@/utils/requestStatus'
+
+import type { Request, RequestItems } from '@/types'
 
 const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
 const toast = useToast()
 const { loading, fetchRequests, fetchRequestItems } = useRequests()
+const { canViewRequests } = usePermissions()
 
 const showItemsDialog = ref(false)
 const itemsRequest = ref<RequestItems[]>([])
@@ -65,7 +71,7 @@ async function openItems(requestId: number) {
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-sm border border-surface-200 dark:border-surface-700">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 ">
           <div class="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
             <i class="pi pi-list text-purple-600 dark:text-purple-400 text-2xl"></i>
           </div>
@@ -79,7 +85,7 @@ async function openItems(requestId: number) {
       </div>
     </div>
 
-    <Card class="shadow-sm border border-surface-200 dark:border-surface-700">
+    <Card v-if="canViewRequests" class="shadow-sm border border-surface-200 dark:border-surface-700">
       <template #content>
         <div v-if="loading" class="flex justify-center py-8">
           <ProgressSpinner />
@@ -91,7 +97,6 @@ async function openItems(requestId: number) {
         </div>
 
         <div v-else>
-
           <DataView :value="requests" layout="grid" :rows="6" paginatorTemplate="PrevPageLink PageLinks NextPageLink"
             class="rounded-xl overflow-hidden">
 
