@@ -19,8 +19,8 @@ import type { Request, RequestItems } from '@/types'
 const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
 const toast = useToast()
-const { loading, fetchRequests, fetchRequestItems } = useRequests()
-const { canViewRequests } = usePermissions()
+const { loading, fetchRequests, fetchRequestItems, deleteRequest } = useRequests()
+const { canViewRequests, canDeleteRequests } = usePermissions()
 
 const showItemsDialog = ref(false)
 const itemsRequest = ref<RequestItems[]>([])
@@ -39,6 +39,41 @@ async function loadRequests() {
   }
 }
 loadRequests()
+
+const displayConfirmDelete = ref(false)
+const requestToDelete = ref<Request | null>(null)
+
+const confirmDelete = (request: Request) => {
+  requestToDelete.value = request
+  displayConfirmDelete.value = true
+}
+
+const handleDelete = async () => {
+  if (!requestToDelete.value?.id) return
+
+  try {
+    await deleteRequest(requestToDelete.value.id)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Sucesso!',
+      detail: `Pedido "${requestToDelete.value.id}" deletado.`,
+      life: 3000,
+    })
+
+    displayConfirmDelete.value = false
+    requestToDelete.value = null
+    await loadRequests()
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Erro ao deletar pedido"
+    toast.add({
+      severity: 'error',
+      summary: 'Erro na Deleção',
+      detail: msg,
+      life: 5000,
+    })
+  }
+}
 
 
 async function openItems(requestId: number) {
@@ -137,16 +172,20 @@ async function openItems(requestId: number) {
                     </div>
 
                     <div class="mt-2 flex justify-end">
-                      <Button class="m-2" icon="pi pi-eye" severity="sucess" size="large" aria-label="Itens"
+                      <Button class="m-2" icon="pi pi-eye" severity="success" size="large" aria-label="Itens"
                         @click="openItems(r.id)" />
+
                       <Button class="m-2" icon="pi pi-pencil" severity="info" size="large" aria-label="Editar" />
-                      <Button class="m-2" icon="pi pi-trash" severity="danger" size="large" aria-label="Deletar" />
+
+                      <Button v-if="canDeleteRequests" class="m-2" icon="pi pi-trash" severity="danger" size="large"
+                        aria-label="Deletar" @click="confirmDelete(r)" />
                     </div>
+
                   </div>
                 </div>
+
               </div>
             </template>
-
 
             <template #empty>
               <div class="text-center p-6 text-surface-500 dark:text-surface-400">Nenhuma solicitação encontrada.</div>
@@ -185,6 +224,21 @@ async function openItems(requestId: number) {
       </div>
     </Dialog>
 
+    <Dialog v-model:visible="displayConfirmDelete" header="Confirmação de Deleção" :modal="true" :draggable="false"
+      class="w-full md:w-2/5">
+      <div class="flex items-center">
+        <i class="pi pi-exclamation-triangle text-red-500 text-3xl mr-4" />
+        <span v-if="requestToDelete">
+          Você realmente deseja deletar o pedido
+          <b class="text-red-500">{{ requestToDelete.id }}</b>? Esta ação é irreversível.
+        </span>
+      </div>
+
+      <template #footer>
+        <Button label="Não" icon="pi pi-times" @click="displayConfirmDelete = false" text />
+        <Button label="Sim, Deletar" icon="pi pi-trash" @click="handleDelete" severity="danger" autofocus />
+      </template>
+    </Dialog>
 
   </div>
 </template>
