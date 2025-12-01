@@ -46,6 +46,7 @@ export function usePermissions() {
   const canViewRequests = computed(() => true) // Todos podem ver pedidos (mas users veem apenas os seus)
   const canViewAllRequests = computed(() => isAdmin.value || isManager.value) // Admin e Manager veem todos
   const canCreateRequests = computed(() => true) // Todos podem criar pedidos
+  const canEditRequestStatus = computed(() => isAdmin.value || isManager.value) // Apenas admin e manager podem editar status
   const canApproveRequests = computed(() => isAdmin.value || isManager.value)
   const canDeleteRequests = computed(() => isAdmin.value || isManager.value)
 
@@ -78,6 +79,7 @@ export function usePermissions() {
     canViewRequests,
     canViewAllRequests,
     canCreateRequests,
+    canEditRequestStatus,
     canApproveRequests,
     canDeleteRequests,
 
