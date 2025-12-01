@@ -40,10 +40,9 @@ export interface UserView {
 
 export interface Request {
   id: number
-  details: string
-  date: Date
-  reservation_start: Date
-  reservation_end: Date
+  details: string | null
+  reservation_start: string
+  reservation_end: string
   status:
     | 'open'
     | 'in_progress'
@@ -54,6 +53,10 @@ export interface Request {
     | 'cancelled'
     | null
   profile_id: string
+  profiles: {
+    first_name: string | null
+    last_name: string | null
+  }
 }
 
 export interface RequestItems {
@@ -64,4 +67,11 @@ export interface RequestItems {
   checked_out: number
   returned: number
   item: Item | null
+}
+
+export interface CreateRequestPayload {
+  details: string | null
+  reservation_start: string
+  reservation_end: string
+  status: Request['status']
 }
