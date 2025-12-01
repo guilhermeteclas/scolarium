@@ -9,6 +9,11 @@ import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
 import Calendar from 'primevue/calendar'
 
+import PageHeader from '@/components/common/PageHeader.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import ErrorState from '@/components/common/ErrorState.vue'
+import ConfirmDeleteDialog from '@/components/common/ConfirmDeleteDialog.vue'
+
 import { useToast } from 'primevue/usetoast'
 import { useRequests } from '@/composables/useRequests'
 import { useItems } from '@/composables/useItems'
@@ -348,33 +353,14 @@ async function handleSaveRequest() {
 <template>
   <div class="space-y-4">
     <!-- header -->
-    <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-sm border border-surface-200 dark:border-surface-700">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 ">
-          <div class="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
-            <i class="pi pi-list text-purple-600 dark:text-purple-400 text-2xl"></i>
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-0 m-0">Pedidos</h1>
-            <p class="text-sm text-surface-600 dark:text-surface-400 mt-1">Controle de requisições e movimentações de
-              materiais</p>
-          </div>
-        </div>
-        <Button label="Novo Pedido" icon="pi pi-plus" severity="success" @click="openEditModal()" />
-      </div>
-    </div>
+    <PageHeader title="Pedidos" subtitle="Controle de requisições e movimentações de materiais" icon="pi-list"
+      icon-class="text-purple-600 dark:text-purple-400" icon-bg-class="bg-purple-100 dark:bg-purple-900/30"
+      button-label="Novo Pedido" button-icon="pi pi-plus" button-severity="success" @action="openEditModal()" />
 
     <Card v-if="canViewRequests" class="shadow-sm border border-surface-200 dark:border-surface-700">
       <template #content>
-        <div v-if="loading" class="flex justify-center py-8">
-          <ProgressSpinner />
-        </div>
-
-        <div v-else-if="error" class="p-4">
-          <p class="text-red-500 font-bold">Erro ao carregar dados: {{ error.message }}</p>
-          <Button label="Recarregar" icon="pi pi-refresh" @click="loadRequests" class="mt-3" />
-        </div>
+        <LoadingState v-if="loading" />
+        <ErrorState v-else-if="error" :error="error" @retry="loadRequests" />
 
         <div v-else>
           <DataView :value="requests" layout="grid" :rows="6" paginatorTemplate="PrevPageLink PageLinks NextPageLink"
@@ -497,7 +483,7 @@ async function handleSaveRequest() {
                 Data de Início *
               </label>
               <Calendar id="reservation_start" v-model="editFormData.reservation_start" showTime hourFormat="24"
-                dateFormat="dd/mm/yy" required
+                dateFormat="dd/mm/yy" required panelClass="min-w-[12rem]"
                 class="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
 
@@ -507,7 +493,7 @@ async function handleSaveRequest() {
                 Data de Término *
               </label>
               <Calendar id="reservation_end" v-model="editFormData.reservation_end" showTime hourFormat="24"
-                dateFormat="dd/mm/yy" required
+                dateFormat="dd/mm/yy" required panelClass="min-w-[12rem]"
                 class="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -603,21 +589,9 @@ async function handleSaveRequest() {
       </form>
     </Dialog>
 
-    <Dialog v-model:visible="displayConfirmDelete" header="Confirmação de Deleção" :modal="true" :draggable="false"
-      class="w-full md:w-2/5">
-      <div class="flex items-center">
-        <i class="pi pi-exclamation-triangle text-red-500 text-3xl mr-4" />
-        <span v-if="requestToDelete">
-          Você realmente deseja deletar o pedido
-          <b class="text-red-500">{{ requestToDelete.id }}</b>? Esta ação é irreversível.
-        </span>
-      </div>
-
-      <template #footer>
-        <Button label="Não" icon="pi pi-times" @click="displayConfirmDelete = false" text />
-        <Button label="Sim, Deletar" icon="pi pi-trash" @click="handleDelete" severity="danger" autofocus />
-      </template>
-    </Dialog>
+    <ConfirmDeleteDialog v-model:visible="displayConfirmDelete"
+      :message="requestToDelete ? `Você realmente deseja deletar o pedido <b class='text-red-500'>${requestToDelete.id}</b>? Esta ação é irreversível.` : ''"
+      confirm-label="Sim, Deletar" cancel-label="Não" @confirm="handleDelete" />
 
   </div>
 </template>
