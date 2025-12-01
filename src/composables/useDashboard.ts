@@ -15,21 +15,18 @@ export function useDashboard() {
     loading.value = true
 
     try {
-      // INVENTÁRIOS ATIVOS
       const { count: inventariosCount } = await supabase
         .from('inventories')
         .select('*', { count: 'exact', head: true })
 
       totalInventarios.value = inventariosCount || 0
 
-      // TOTAL DE ITENS
       const { count: itensCount } = await supabase
         .from('items')
         .select('*', { count: 'exact', head: true })
 
       totalItens.value = itensCount || 0
 
-      // PEDIDOS PENDENTES
       const { count: pedidosCount } = await supabase
         .from('requests')
         .select('*', { count: 'exact', head: true })

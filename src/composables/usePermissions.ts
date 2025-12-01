@@ -50,6 +50,21 @@ export function usePermissions() {
   const canApproveRequests = computed(() => isAdmin.value || isManager.value)
   const canDeleteRequests = computed(() => isAdmin.value || isManager.value)
 
+  /**
+   * Verifica se o usuário pode editar itens de um pedido
+   * @param isEditMode - Se está editando um pedido existente (true) ou criando novo (false)
+   * @param requestStatus - Status atual do pedido
+   * @returns true se pode editar itens, false caso contrário
+   */
+  const canEditRequestItems = (isEditMode: boolean, requestStatus?: string | null): boolean => {
+    // Admin e Manager podem editar sempre
+    if (isAdmin.value || isManager.value) {
+      return true
+    }
+    // User só pode editar quando está criando novo pedido ou quando status é 'open'
+    return !isEditMode || requestStatus === 'open'
+  }
+
   // Permissões para Usuários
   const canViewUsers = computed(() => isAdmin.value)
   const canManageUsers = computed(() => isAdmin.value)
@@ -80,6 +95,7 @@ export function usePermissions() {
     canViewAllRequests,
     canCreateRequests,
     canEditRequestStatus,
+    canEditRequestItems,
     canApproveRequests,
     canDeleteRequests,
 

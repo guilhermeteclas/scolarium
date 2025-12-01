@@ -1,33 +1,14 @@
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
+import { REQUEST_STATUS_ORDER } from '@/utils/requestStatus'
 import type { Request, RequestItems, CreateRequestPayload } from '@/types'
 
 export function useRequests() {
-  async function addRequestItems(
-    requestId: number,
-    items: Array<{ item_id: number; quantity: number }>,
-  ) {
-    if (!auth.user) throw new Error('Usuário não autenticado')
-    if (!items || items.length === 0) return
-    const itemsPayload = items.map((i) => ({
-      request_id: requestId,
-      item_id: i.item_id,
-      quantity: i.quantity,
-    }))
-    const { error } = await supabase.from('request_items').insert(itemsPayload)
-    if (error) throw error
-  }
-
-  async function removeRequestItems(requestId: number) {
-    if (!auth.user) throw new Error('Usuário não autenticado')
-    const { error } = await supabase.from('request_items').delete().eq('request_id', requestId)
-    if (error) throw error
-  }
   const auth = useAuthStore()
   const loading = ref(false)
 
-  const query = `id,
+  const REQUESTS_QUERY = `id,
                  details,
                  reservation_start,
                  reservation_end,
@@ -35,23 +16,13 @@ export function useRequests() {
                  profile_id,
                  profiles(first_name, last_name)`
 
-  const queryItems = `id,
+  const REQUEST_ITEMS_QUERY = `id,
                       request_id,
                       item_id,
                       quantity,
                       checked_out,
                       returned,
                       item:items ( id, name, type, quantity, inventory_id )`
-
-  const orderMap: Record<string, number> = {
-    pending: 1,
-    open: 2,
-    in_progress: 3,
-    ready: 4,
-    completed: 5,
-    rejected: 6,
-    cancelled: 7,
-  }
 
   async function fetchRequests() {
     if (!auth.user) {
@@ -60,15 +31,15 @@ export function useRequests() {
     loading.value = true
 
     try {
-      const { data, error } = await supabase.from('requests').select(query)
+      const { data, error } = await supabase.from('requests').select(REQUESTS_QUERY)
 
       if (error) throw error
 
       const sorted = (data ?? []).sort((a: unknown, b: unknown) => {
         const aData = a as Request
         const bData = b as Request
-        const aKey = orderMap[aData.status ?? ''] ?? 99
-        const bKey = orderMap[bData.status ?? ''] ?? 99
+        const aKey = REQUEST_STATUS_ORDER[aData.status ?? ''] ?? 99
+        const bKey = REQUEST_STATUS_ORDER[bData.status ?? ''] ?? 99
         return aKey - bKey
       })
 
@@ -89,7 +60,7 @@ export function useRequests() {
     try {
       const { data, error } = await supabase
         .from('request_items')
-        .select(queryItems)
+        .select(REQUEST_ITEMS_QUERY)
         .eq('request_id', requestId)
 
       if (error) throw error
@@ -99,20 +70,6 @@ export function useRequests() {
       throw new Error(message)
     } finally {
       loading.value = false
-    }
-  }
-
-  async function deleteRequest(requestId: number) {
-    if (!auth.user) {
-      throw new Error('Usuário não autenticado')
-    }
-    try {
-      const { error: deleteError } = await supabase.from('requests').delete().eq('id', requestId)
-
-      if (deleteError) throw deleteError
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Erro ao deletar pedido'
-      throw new Error(msg)
     }
   }
 
@@ -175,13 +132,48 @@ export function useRequests() {
     }
   }
 
+  async function deleteRequest(requestId: number) {
+    if (!auth.user) {
+      throw new Error('Usuário não autenticado')
+    }
+    try {
+      const { error: deleteError } = await supabase.from('requests').delete().eq('id', requestId)
+
+      if (deleteError) throw deleteError
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro ao deletar pedido'
+      throw new Error(msg)
+    }
+  }
+
+  async function addRequestItems(
+    requestId: number,
+    items: Array<{ item_id: number; quantity: number }>,
+  ) {
+    if (!auth.user) throw new Error('Usuário não autenticado')
+    if (!items || items.length === 0) return
+    const itemsPayload = items.map((i) => ({
+      request_id: requestId,
+      item_id: i.item_id,
+      quantity: i.quantity,
+    }))
+    const { error } = await supabase.from('request_items').insert(itemsPayload)
+    if (error) throw error
+  }
+
+  async function removeRequestItems(requestId: number) {
+    if (!auth.user) throw new Error('Usuário não autenticado')
+    const { error } = await supabase.from('request_items').delete().eq('request_id', requestId)
+    if (error) throw error
+  }
+
   return {
     loading,
     fetchRequests,
     fetchRequestItems,
-    deleteRequest,
     createRequest,
     updateRequest,
+    deleteRequest,
     addRequestItems,
     removeRequestItems,
   }

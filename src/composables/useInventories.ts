@@ -1,13 +1,13 @@
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
-import type { Inventory, UserInventory } from '@/types'
 import { useAuthStore } from '@/stores/auth'
+import type { Inventory, UserInventory } from '@/types'
 
 export function useInventories() {
   const auth = useAuthStore()
   const loading = ref(false)
 
-  const queryString = `
+  const USER_INVENTORIES_QUERY = `
     id,
     profiles(
       first_name,
@@ -43,11 +43,11 @@ export function useInventories() {
     }
     loading.value = true
     try {
-      const { data, error } = await supabase.from('user_inventories').select(queryString)
+      const { data, error } = await supabase.from('user_inventories').select(USER_INVENTORIES_QUERY)
       if (error) throw error
       return data as unknown as UserInventory[]
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao carregar inventários'
+      const message = error instanceof Error ? error.message : 'Erro ao carregar inventários de usuários'
       throw new Error(message)
     } finally {
       loading.value = false
@@ -90,7 +90,7 @@ export function useInventories() {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
-    const { error: updateError } = await supabase
+    const { error } = await supabase
       .from('inventories')
       .update({
         name: data.name,
@@ -98,7 +98,7 @@ export function useInventories() {
       })
       .eq('id', inventoryId)
 
-    if (updateError) throw updateError
+    if (error) throw error
   }
 
   async function deleteInventory(inventoryId: number) {
@@ -128,10 +128,10 @@ export function useInventories() {
 
   return {
     loading,
-    createInventory,
-    deleteInventory,
     fetchInventories,
     fetchUserInventories,
+    createInventory,
     updateInventory,
+    deleteInventory,
   }
 }

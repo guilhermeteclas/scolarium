@@ -25,7 +25,7 @@ const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
 const toast = useToast()
 const { loading, fetchRequests, fetchRequestItems, deleteRequest, createRequest, updateRequest } = useRequests()
-const { canViewRequests, canDeleteRequests, canEditRequestStatus, isAdmin, isManager } = usePermissions()
+const { canViewRequests, canDeleteRequests, canEditRequestStatus, canEditRequestItems } = usePermissions()
 const { searchItems, updateItem } = useItems()
 
 const showItemsDialog = ref(false)
@@ -98,12 +98,7 @@ function updateItemQuantity(itemId: number, quantity: number) {
 // - Admin e Manager: podem editar sempre
 // - User: apenas quando status é 'open' (ou criando novo pedido)
 const canEditItems = computed(() => {
-  // Admin e Manager podem editar sempre
-  if (isAdmin.value || isManager.value) {
-    return true
-  }
-  // User só pode editar quando não está em modo de edição ou quando status é 'open'
-  return !isEditMode.value || editFormData.value.status === 'open'
+  return canEditRequestItems(isEditMode.value, editFormData.value.status)
 })
 
 const fmt = formatDate

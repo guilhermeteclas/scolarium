@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient'
-import type { Item } from '@/types'
 import { useAuthStore } from '@/stores/auth'
+import type { Item } from '@/types'
 
 type ItemInsert = Omit<Item, 'id'>
 type ItemWithInventory = Item & { inventory: { id: number; name: string } | null }
@@ -10,7 +10,7 @@ export function useItems() {
   const auth = useAuthStore()
   const loading = ref(false)
 
-  const query = `
+  const ITEMS_WITH_INVENTORY_QUERY = `
     id, name, type, quantity, inventory_id,
     inventory:inventories ( id, name )
   `
@@ -21,12 +21,11 @@ export function useItems() {
     try {
       const { data, error } = await supabase
         .from('items')
-        .select(query)
+        .select(ITEMS_WITH_INVENTORY_QUERY)
         .order('id', { ascending: false })
 
       if (error) throw error
 
-      // garante que 'inventory' exista (objeto ou null)
       return (data ?? []).map((row) => {
         let inventory: { id: number; name: string } | null = null
         if (row.inventory) {
@@ -73,7 +72,7 @@ export function useItems() {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
-    const { error: updateError } = await supabase
+    const { error } = await supabase
       .from('items')
       .update({
         name: data.name,
@@ -83,7 +82,7 @@ export function useItems() {
       })
       .eq('id', itemId)
 
-    if (updateError) throw updateError
+    if (error) throw error
   }
 
   async function deleteItem(itemId: number) {
@@ -92,11 +91,11 @@ export function useItems() {
     }
 
     try {
-      const { error: deleteError } = await supabase.from('items').delete().eq('id', itemId)
+      const { error } = await supabase.from('items').delete().eq('id', itemId)
 
-      if (deleteError) throw deleteError
+      if (error) throw error
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao deletar inventário'
+      const message = error instanceof Error ? error.message : 'Erro ao deletar item'
       throw new Error(message)
     }
   }

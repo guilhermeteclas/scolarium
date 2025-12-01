@@ -47,7 +47,10 @@ function checkPermissions(
     const permissionKey = to.meta.requiresPermission as keyof ReturnType<typeof usePermissions>
     const hasPermission = permissions[permissionKey]
 
-    if (!hasPermission.value) {
+    // Verifica se é uma função (como canEditRequestItems) ou um ComputedRef
+    const permissionValue = typeof hasPermission === 'function' ? false : hasPermission.value
+
+    if (!permissionValue) {
       toast.add({
         severity: 'error',
         summary: 'Acesso Negado',
