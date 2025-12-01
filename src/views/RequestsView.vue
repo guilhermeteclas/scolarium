@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 import Card from 'primevue/card'
 import Button from 'primevue/button'
@@ -25,7 +25,7 @@ const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
 const toast = useToast()
 const { loading, fetchRequests, fetchRequestItems, deleteRequest, createRequest, updateRequest } = useRequests()
-const { canViewRequests, canDeleteRequests } = usePermissions()
+const { canViewRequests, canDeleteRequests, canEditRequestStatus, isAdmin, isManager } = usePermissions()
 const { searchItems, updateItem } = useItems()
 
 const showItemsDialog = ref(false)
@@ -51,7 +51,14 @@ const currentEditingRequest = ref<Request | null>(null)
 const editLoading = ref(false)
 
 // State para gerenciamento de itens na request
-const selectedItems = ref<Map<number, { item: Item; quantity: number; checked_out?: number; returned?: number }>>(new Map())
+const selectedItems = ref<Map<number, {
+  item: Item;
+  quantity: number;
+  checked_out?: number;
+  returned?: number;
+  original_checked_out?: number;
+  original_returned?: number;
+}>>(new Map())
 const itemSearch = ref('')
 const searchedItems = ref<Item[]>([])
 const itemSearchLoading = ref(false)
@@ -86,6 +93,18 @@ function updateItemQuantity(itemId: number, quantity: number) {
     itemData.quantity = quantity
   }
 }
+
+// Verifica se pode editar itens
+// - Admin e Manager: podem editar sempre
+// - User: apenas quando status é 'open' (ou criando novo pedido)
+const canEditItems = computed(() => {
+  // Admin e Manager podem editar sempre
+  if (isAdmin.value || isManager.value) {
+    return true
+  }
+  // User só pode editar quando não está em modo de edição ou quando status é 'open'
+  return !isEditMode.value || editFormData.value.status === 'open'
+})
 
 const fmt = formatDate
 
@@ -181,7 +200,9 @@ function openEditModal(request?: Request) {
               item: itemRow.item,
               quantity: itemRow.quantity,
               checked_out: itemRow.checked_out || 0,
-              returned: itemRow.returned || 0
+              returned: itemRow.returned || 0,
+              original_checked_out: itemRow.checked_out || 0,
+              original_returned: itemRow.returned || 0
             })
           }
         })
@@ -243,8 +264,9 @@ async function handleSaveRequest() {
       // Atualiza estoque se status for 'ready' ou 'completed'
       if (editFormData.value.status === 'ready' || editFormData.value.status === 'completed') {
         for (const [itemId, itemData] of selectedItems.value.entries()) {
-          const { item, quantity, checked_out = 0, returned = 0 } = itemData;
+          const { item, quantity, checked_out = 0, returned = 0, original_checked_out = 0, original_returned = 0 } = itemData;
 
+          // Validações
           if (checked_out < 0) {
             toast.add({ severity: 'warn', summary: 'Valor inválido', detail: `Retirados não pode ser negativo para o item ${item.name}`, life: 4000 })
             continue
@@ -262,16 +284,26 @@ async function handleSaveRequest() {
             continue
           }
 
-          const calculatedQuantity = item.quantity - checked_out + returned;
+          // Calcula o delta (diferença) entre valores antigos e novos
+          const deltaCheckedOut = checked_out - original_checked_out  // Positivo = retirou mais, Negativo = devolveu retirada
+          const deltaReturned = returned - original_returned          // Positivo = devolveu mais
 
-          if (calculatedQuantity !== item.quantity) {
+          // Atualiza estoque baseado nos deltas
+          // - Retiradas diminuem o estoque (deltaCheckedOut positivo diminui)
+          // - Devoluções aumentam o estoque (deltaReturned positivo aumenta)
+          const inventoryChange = -deltaCheckedOut + deltaReturned
+
+          if (inventoryChange !== 0) {
+            const newQuantity = item.quantity + inventoryChange
             try {
               await updateItem(itemId, {
                 name: item.name,
                 type: item.type || '',
-                quantity: calculatedQuantity,
+                quantity: newQuantity,
                 inventory_id: item.inventory_id,
               })
+              // Atualiza a quantidade local para refletir a mudança
+              item.quantity = newQuantity
             } catch {
               toast.add({ severity: 'error', summary: 'Erro', detail: `Erro ao atualizar estoque do item ${item.name}`, life: 3000 })
             }
@@ -488,8 +520,8 @@ async function handleSaveRequest() {
           <!-- Status -->
           <div v-if="isEditMode" class="flex flex-col gap-2">
             <label for="status" class="font-semibold text-surface-900 dark:text-surface-0">Status</label>
-            <select id="status" v-model="editFormData.status"
-              class="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <select id="status" v-model="editFormData.status" :disabled="!canEditRequestStatus"
+              class="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed">
               <option value="open">Aberto</option>
               <option value="in_progress">Em andamento</option>
               <option value="pending">Pendente</option>
@@ -510,9 +542,12 @@ async function handleSaveRequest() {
             <label for="itemSearch" class="font-semibold text-surface-900 dark:text-surface-0">Pesquisar Item</label>
             <AutoComplete v-model="itemSearch" :suggestions="searchedItems" @complete="handleSearchItems"
               :loading="itemSearchLoading" placeholder="Digite o nome do item..." option-label="name"
-              @item-select="addItemToRequest($event.value)"
+              @item-select="addItemToRequest($event.value)" :disabled="!canEditItems"
               class="w-full border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800"
               input-class="w-full px-3 py-2 bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none" />
+            <p v-if="!canEditItems" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
+              ⚠️ Itens só podem ser adicionados/removidos quando o status for "Aberto"
+            </p>
           </div>
 
           <!-- Lista de Itens Selecionados -->
@@ -533,9 +568,9 @@ async function handleSaveRequest() {
                 <div class="flex items-center gap-2">
                   <div class="flex flex-col items-center mx-2">
                     <label class="text-xs">Solicitados</label>
-                    <input type="number" :value="quantity"
+                    <input type="number" :value="quantity" :disabled="!canEditItems"
                       @input="updateItemQuantity(itemId, parseInt(($event.target as HTMLInputElement).value))" min="1"
-                      class="w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-0 text-center focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      class="w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-0 text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed" />
                   </div>
                   <template
                     v-if="isEditMode && (editFormData.status === 'ready' || editFormData.status === 'completed')">
@@ -552,7 +587,7 @@ async function handleSaveRequest() {
                         class="w-16 px-2 py-1 border border-green-300 dark:border-green-600 rounded bg-surface-0 dark:bg-surface-900 text-green-900 dark:text-green-200 text-center focus:outline-none focus:ring-2 focus:ring-green-500" />
                     </div>
                   </template>
-                  <Button icon="pi pi-trash" severity="danger" text size="small"
+                  <Button icon="pi pi-trash" severity="danger" text size="small" :disabled="!canEditItems"
                     @click="removeItemFromRequest(itemId)" />
                 </div>
               </div>
