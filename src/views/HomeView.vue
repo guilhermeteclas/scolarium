@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
 const router = useRouter()
 
 const features = [
@@ -44,11 +46,7 @@ function navigateToDashboard() {
         <div class="max-w-4xl mx-auto text-center space-y-8">
           <div class="flex justify-center">
             <div class="bg-white/10 backdrop-blur-sm p-6 rounded-3xl">
-              <img
-                src="/material-escolar.png"
-                alt="Logo Scolarium"
-                class="w-24 h-24 md:w-32 md:h-32 drop-shadow-lg"
-              />
+              <img src="/material-escolar.png" alt="Logo Scolarium" class="w-24 h-24 md:w-32 md:h-32 drop-shadow-lg" />
             </div>
           </div>
 
@@ -60,21 +58,10 @@ function navigateToDashboard() {
           </div>
 
           <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button
-              label="Acessar Sistema"
-              icon="pi pi-sign-in"
-              size="large"
-              @click="navigateToLogin"
-              class="bg-white text-primary-600 hover:bg-white/90 border-0"
-            />
-            <Button
-              label="Ver Dashboard"
-              icon="pi pi-chart-bar"
-              size="large"
-              outlined
-              @click="navigateToDashboard"
-              class="border-white text-white hover:bg-white/10"
-            />
+            <Button v-if="!auth.user" label="Acessar Sistema" icon="pi pi-sign-in" size="large" @click="navigateToLogin"
+              class="bg-white text-primary-600 hover:bg-white/90 border-0" />
+            <Button label="Ver Dashboard" icon="pi pi-chart-bar" size="large" outlined @click="navigateToDashboard"
+              class="border-white text-white hover:bg-white/10" />
           </div>
         </div>
       </div>
@@ -94,16 +81,11 @@ function navigateToDashboard() {
           </div>
 
           <div class="grid md:grid-cols-2 gap-6 lg:gap-8">
-            <div
-              v-for="feature in features"
-              :key="feature.icon"
-              class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow"
-            >
+            <div v-for="feature in features" :key="feature.icon"
+              class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
               <div class="flex items-start gap-4">
                 <div class="bg-primary-100 dark:bg-primary-900/30 rounded-full p-3 shrink-0">
-                  <i
-                    :class="['pi', feature.icon, 'text-2xl text-primary-600 dark:text-primary-400']"
-                  ></i>
+                  <i :class="['pi', feature.icon, 'text-2xl text-primary-600 dark:text-primary-400']"></i>
                 </div>
                 <div class="space-y-2">
                   <h3 class="text-xl font-semibold text-surface-900 dark:text-surface-0">
@@ -121,7 +103,7 @@ function navigateToDashboard() {
     </div>
 
     <!-- CTA Section -->
-    <div class="bg-surface-0 dark:bg-surface-900 py-16">
+    <div v-if="!auth.user" class="bg-surface-0 dark:bg-surface-900 py-16">
       <div class="container mx-auto px-4">
         <div class="max-w-3xl mx-auto text-center space-y-6">
           <h2 class="text-3xl md:text-4xl font-bold text-surface-900 dark:text-surface-0">
@@ -130,13 +112,7 @@ function navigateToDashboard() {
           <p class="text-lg text-surface-600 dark:text-surface-400">
             Acesse o sistema e comece a gerenciar seus materiais de forma eficiente
           </p>
-          <Button
-            label="Fazer Login"
-            icon="pi pi-sign-in"
-            size="large"
-            @click="navigateToLogin"
-            class="mt-4"
-          />
+          <Button label="Fazer Login" icon="pi pi-sign-in" size="large" @click="navigateToLogin" class="mt-4" />
         </div>
       </div>
     </div>

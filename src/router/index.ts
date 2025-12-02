@@ -36,9 +36,53 @@ const router = createRouter({
   routes,
 })
 
+// Função para verificar permissões
+function checkPermissions(
+  to: import('vue-router').RouteLocationNormalized,
+  auth: ReturnType<typeof useAuthStore>,
+  toast: ReturnType<typeof useToast>,
+) {
+  if (to.meta.requiresPermission && auth.user && auth.profile) {
+    const permissions = usePermissions()
+    const permissionKey = to.meta.requiresPermission as keyof ReturnType<typeof usePermissions>
+    const hasPermission = permissions[permissionKey]
+
+    // Verifica se é uma função (como canEditRequestItems) ou um ComputedRef
+    const permissionValue = typeof hasPermission === 'function' ? false : hasPermission.value
+
+    if (!permissionValue) {
+      toast.add({
+        severity: 'error',
+        summary: 'Acesso Negado',
+        detail: 'Você não tem permissão para acessar esta página.',
+        life: 3000,
+      })
+      return '/requests'
+    }
+  }
+
+  return null
+}
+
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   const toast = useToast()
+
+  // Permite acesso à rota de login sem verificar autenticação
+  if (to.path === '/login') {
+    if (auth.user) {
+      next('/')
+      toast.add({
+        severity: 'info',
+        summary: 'Já está logado',
+        detail: 'Você já está logado e foi redirecionado.',
+        life: 3000,
+      })
+    } else {
+      next()
+    }
+    return
+  }
 
   // Verifica autenticação e carrega dados do usuário
   if (to.meta.requiresAuth) {
@@ -46,7 +90,6 @@ router.beforeEach(async (to, from, next) => {
       try {
         await auth.fetchUser()
 
-        // Se ainda não há usuário após fetchUser, redireciona para login
         if (!auth.user) {
           next('/login')
           toast.add({
@@ -63,11 +106,9 @@ router.beforeEach(async (to, from, next) => {
       }
     }
 
-    // Garante que o profile está carregado
     if (!auth.profile) {
       await auth.fetchUser()
 
-      // Se ainda não tem profile, algo está errado
       if (!auth.profile) {
         toast.add({
           severity: 'error',
@@ -81,27 +122,37 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Verifica permissões se a rota requer
-  if (to.meta.requiresPermission && auth.user && auth.profile) {
-    const permissions = usePermissions()
-    const permissionKey = to.meta.requiresPermission as keyof ReturnType<typeof usePermissions>
-    const hasPermission = permissions[permissionKey]
-
-    if (!hasPermission.value) {
-      next('/requests')
-      toast.add({
-        severity: 'error',
-        summary: 'Acesso Negado',
-        detail: 'Você não tem permissão para acessar esta página.',
-        life: 3000,
-      })
-      return
-    }
+  // Redireciona usuários com role 'user' para /requests
+  if (auth.profile?.role === 'user' && to.path !== '/requests') {
+    toast.add({
+      severity: 'info',
+      summary: 'Redirecionado',
+      detail: 'Você foi redirecionado para sua página inicial.',
+      life: 3000,
+    })
+    next('/requests')
+    return
   }
 
-  // Redireciona user para /requests se tentar acessar raiz
-  if (to.path === '/' && auth.user && auth.profile?.role === 'user') {
-    next('/requests')
+  // Redireciona managers para /requests se tentarem acessar rotas não permitidas
+  if (
+    auth.profile?.role === 'manager' &&
+    to.path === '/dashboard' // Bloqueia apenas o acesso ao dashboard
+  ) {
+    toast.add({
+      severity: 'info',
+      summary: 'Redirecionado',
+      detail: 'Solicite ao admin do sistema acesso ao dashboard.',
+      life: 3000,
+    })
+    next('/inventories')
+    return
+  }
+
+  // Verifica permissões
+  const permissionRedirect = checkPermissions(to, auth, toast)
+  if (permissionRedirect) {
+    next(permissionRedirect)
     return
   }
 

@@ -1,35 +1,16 @@
-import type { UserRole } from '@/composables/usePermissions'
+/**
+ * Barrel export para todos os tipos da aplicação
+ * Organizado por domínio para melhor manutenibilidade
+ */
 
-export interface Profile {
-  id: string
-  first_name?: string
-  last_name?: string
-  role?: UserRole
-}
+// User types
+export type { UserRole, Profile, UserView } from './user'
 
-export interface Inventory {
-  id: number
-  name: string
-  description: string
-}
+// Inventory types
+export type { Inventory, UserInventory, SupabaseInventoryRow } from './inventory'
 
-export interface UserInventory {
-  id: number
-  inventory_id: number
-  profile_id: number
-}
-export interface Item {
-  id: number
-  name: string
-  type: string
-  quantity: number
-  inventory_id: number
-}
+// Item types
+export type { ItemType, Item } from './item'
 
-export interface UserView {
-  id: string;
-  name: string | null;
-  email: string;
-  phone: string | null;
-  role: 'admin' | 'manager' | 'user' | null;
-}
+// Request types
+export type { RequestStatus, Request, RequestItems, CreateRequestPayload } from './request'

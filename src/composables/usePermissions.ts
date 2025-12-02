@@ -1,7 +1,6 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-
-export type UserRole = 'admin' | 'manager' | 'user'
+import type { UserRole } from '@/types'
 
 export function usePermissions() {
   const auth = useAuthStore()
@@ -26,7 +25,8 @@ export function usePermissions() {
 
   // Permissões para Dashboard
   const canViewDashboard = computed(() => {
-    const result = isAdmin.value || isManager.value
+    const result = isAdmin.value
+    //const result = isAdmin.value || isManager.value
     return result
   })
 
@@ -46,8 +46,24 @@ export function usePermissions() {
   const canViewRequests = computed(() => true) // Todos podem ver pedidos (mas users veem apenas os seus)
   const canViewAllRequests = computed(() => isAdmin.value || isManager.value) // Admin e Manager veem todos
   const canCreateRequests = computed(() => true) // Todos podem criar pedidos
+  const canEditRequestStatus = computed(() => isAdmin.value || isManager.value) // Apenas admin e manager podem editar status
   const canApproveRequests = computed(() => isAdmin.value || isManager.value)
   const canDeleteRequests = computed(() => isAdmin.value || isManager.value)
+
+  /**
+   * Verifica se o usuário pode editar itens de um pedido
+   * @param isEditMode - Se está editando um pedido existente (true) ou criando novo (false)
+   * @param requestStatus - Status atual do pedido
+   * @returns true se pode editar itens, false caso contrário
+   */
+  const canEditRequestItems = (isEditMode: boolean, requestStatus?: string | null): boolean => {
+    // Admin e Manager podem editar sempre
+    if (isAdmin.value || isManager.value) {
+      return true
+    }
+    // User só pode editar quando está criando novo pedido ou quando status é 'open'
+    return !isEditMode || requestStatus === 'open'
+  }
 
   // Permissões para Usuários
   const canViewUsers = computed(() => isAdmin.value)
@@ -78,6 +94,8 @@ export function usePermissions() {
     canViewRequests,
     canViewAllRequests,
     canCreateRequests,
+    canEditRequestStatus,
+    canEditRequestItems,
     canApproveRequests,
     canDeleteRequests,
 
