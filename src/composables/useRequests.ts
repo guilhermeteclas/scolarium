@@ -2,8 +2,14 @@ import { ref } from 'vue'
 import { supabase } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { REQUEST_STATUS_ORDER } from '@/utils/requestStatus'
-import type { Request, RequestItems, CreateRequestPayload } from '@/types'
+import type { Request, RequestItem, RequestStatus, ItemType } from '@/types'
+import type { RequestWithItemsCreateDto, RequestItemInputDto } from '@/schemas'
 
+/**
+ * Camada de acesso a dados de pedidos.
+ * Regra de nomenclatura: snake_case apenas nas queries/rows do Supabase;
+ * DTOs e retornos de domínio são sempre camelCase.
+ */
 export function useRequests() {
   const auth = useAuthStore()
   const loading = ref(false)
@@ -17,14 +23,72 @@ export function useRequests() {
                  profiles(first_name, last_name)`
 
   const REQUEST_ITEMS_QUERY = `id,
-                      request_id,
-                      item_id,
-                      quantity,
-                      checked_out,
-                      returned,
-                      item:items ( id, name, type, quantity, inventory_id )`
+                       request_id,
+                       item_id,
+                       quantity,
+                       checked_out,
+                       returned,
+                       item:items ( id, name, type, quantity, inventory_id )`
 
-  async function fetchRequests() {
+  type RequestRow = {
+    id: number
+    details: string | null
+    reservation_start: string
+    reservation_end: string
+    status: string
+    profile_id: string
+    profiles: { first_name: string | null; last_name: string | null } | null
+  }
+
+  type RequestItemRow = {
+    id: number
+    request_id: number
+    item_id: number
+    quantity: number
+    checked_out: number
+    returned: number
+    item: { id: number; name: string; type: string; quantity: number; inventory_id: number } | null
+  }
+
+  function toRequesterName(profiles: RequestRow['profiles']): string | null {
+    if (!profiles) return null
+    const name = `${profiles.first_name ?? ''} ${profiles.last_name ?? ''}`.trim()
+    return name || null
+  }
+
+  function toRequest(row: RequestRow): Request {
+    return {
+      id: row.id,
+      details: row.details,
+      reservationStart: row.reservation_start,
+      reservationEnd: row.reservation_end,
+      status: row.status as RequestStatus, // garantido pelo CHECK constraint do banco
+      profileId: row.profile_id,
+      requesterName: toRequesterName(row.profiles),
+    }
+  }
+
+  function toRequestItem(row: RequestItemRow): RequestItem {
+    return {
+      id: row.id,
+      requestId: row.request_id,
+      itemId: row.item_id,
+      quantity: row.quantity,
+      checkedOut: row.checked_out,
+      returned: row.returned,
+      item: row.item
+        ? {
+            id: row.item.id,
+            name: row.item.name,
+            type: row.item.type as ItemType, // garantido pelo CHECK constraint do banco
+            quantity: row.item.quantity,
+            inventoryId: row.item.inventory_id,
+          }
+        : null,
+    }
+  }
+
+  async function fetchRequests(): Promise<Request[]> {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
@@ -35,15 +99,13 @@ export function useRequests() {
 
       if (error) throw error
 
-      const sorted = (data ?? []).sort((a: unknown, b: unknown) => {
-        const aData = a as Request
-        const bData = b as Request
-        const aKey = REQUEST_STATUS_ORDER[aData.status ?? ''] ?? 99
-        const bKey = REQUEST_STATUS_ORDER[bData.status ?? ''] ?? 99
+      const requests = ((data ?? []) as unknown as RequestRow[]).map(toRequest)
+
+      return requests.sort((a, b) => {
+        const aKey = REQUEST_STATUS_ORDER[a.status] ?? 99
+        const bKey = REQUEST_STATUS_ORDER[b.status] ?? 99
         return aKey - bKey
       })
-
-      return sorted as unknown as Request[]
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar pedidos'
       throw new Error(message)
@@ -52,7 +114,7 @@ export function useRequests() {
     }
   }
 
-  async function fetchRequestItems(requestId: number) {
+  async function fetchRequestItems(requestId: number): Promise<RequestItem[]> {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
@@ -64,7 +126,7 @@ export function useRequests() {
         .eq('request_id', requestId)
 
       if (error) throw error
-      return data as unknown as RequestItems[]
+      return ((data ?? []) as unknown as RequestItemRow[]).map(toRequestItem)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar itens do pedido'
       throw new Error(message)
@@ -73,10 +135,11 @@ export function useRequests() {
     }
   }
 
-  async function createRequest(
-    payload: CreateRequestPayload,
-    items?: Array<{ item_id: number; quantity: number }>,
-  ) {
+  /**
+   * Cria um pedido com seus itens a partir do DTO validado (Valibot).
+   * Retorna o pedido criado (requesterName indisponível sem join — usar loadRequests).
+   */
+  async function createRequest(payload: RequestWithItemsCreateDto): Promise<Request> {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
@@ -85,7 +148,10 @@ export function useRequests() {
         .from('requests')
         .insert([
           {
-            ...payload,
+            details: payload.details,
+            reservation_start: payload.reservationStart,
+            reservation_end: payload.reservationEnd,
+            status: payload.status,
             profile_id: auth.user.id,
             date: new Date().toISOString(),
           },
@@ -93,39 +159,46 @@ export function useRequests() {
         .select()
 
       if (error) throw error
-      const request = data?.[0] as unknown as Request
-      if (request && items && items.length > 0) {
-        await addRequestItems(request.id, items)
+      const row = data?.[0] as unknown as RequestRow | undefined
+      if (!row) throw new Error('Falha ao criar pedido')
+
+      if (payload.items.length > 0) {
+        await addRequestItems(row.id, payload.items)
       }
-      return request
+      return toRequest(row)
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Erro ao criar pedido'
       throw new Error(msg)
     }
   }
 
-  async function updateRequest(
-    requestId: number,
-    payload: Partial<CreateRequestPayload>,
-    items?: Array<{ item_id: number; quantity: number }>,
-  ) {
+  /**
+   * Atualiza um pedido e substitui seus itens a partir do DTO validado (Valibot).
+   */
+  async function updateRequest(requestId: number, payload: RequestWithItemsCreateDto): Promise<Request> {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
     try {
       const { data, error } = await supabase
         .from('requests')
-        .update(payload)
+        .update({
+          details: payload.details,
+          reservation_start: payload.reservationStart,
+          reservation_end: payload.reservationEnd,
+          status: payload.status,
+        })
         .eq('id', requestId)
         .select()
 
       if (error) throw error
-      const request = data?.[0] as unknown as Request
-      if (request && items) {
-        await removeRequestItems(requestId)
-        await addRequestItems(requestId, items)
-      }
-      return request
+      const row = data?.[0] as unknown as RequestRow | undefined
+      if (!row) throw new Error('Falha ao atualizar pedido')
+
+      await removeRequestItems(requestId)
+      await addRequestItems(requestId, payload.items)
+
+      return toRequest(row)
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Erro ao atualizar pedido'
       throw new Error(msg)
@@ -146,15 +219,12 @@ export function useRequests() {
     }
   }
 
-  async function addRequestItems(
-    requestId: number,
-    items: Array<{ item_id: number; quantity: number }>,
-  ) {
+  async function addRequestItems(requestId: number, items: RequestItemInputDto[]) {
     if (!auth.user) throw new Error('Usuário não autenticado')
     if (!items || items.length === 0) return
     const itemsPayload = items.map((i) => ({
       request_id: requestId,
-      item_id: i.item_id,
+      item_id: i.itemId,
       quantity: i.quantity,
     }))
     const { error } = await supabase.from('request_items').insert(itemsPayload)

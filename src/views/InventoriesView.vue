@@ -16,10 +16,12 @@ import LoadingState from '@/components/common/LoadingState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import ConfirmDeleteDialog from '@/components/common/ConfirmDeleteDialog.vue'
 import { useToast } from 'primevue/usetoast'
+import { safeParse } from 'valibot'
 
 import { useInventories } from '@/composables/useInventories'
 import { usePermissions } from '@/composables/usePermissions'
-import type { Inventory, UserInventory } from '@/types'
+import { InventoryCreateSchema } from '@/schemas'
+import type { Inventory, InventoryWithManager } from '@/types'
 
 // Inicialização de hooks
 const toast = useToast()
@@ -28,15 +30,15 @@ const { loading, createInventory, deleteInventory, updateInventory, fetchUserInv
   useInventories()
 
 // Estado
-const inventories = ref<UserInventory[]>([])
+const inventories = ref<InventoryWithManager[]>([])
 const error = ref<Error | null>(null)
 const isEditing = ref(false)
 
 const columns = [
-  { field: 'inventories.id', header: 'ID' },
-  { field: 'inventories.name', header: 'Nome do Inventário' },
-  { field: 'inventories.description', header: 'Descrição do Local' },
-  { field: 'profiles.first_name', header: 'Responsável' },
+  { field: 'id', header: 'ID' },
+  { field: 'name', header: 'Nome do Inventário' },
+  { field: 'description', header: 'Descrição do Local' },
+  { field: 'manager.firstName', header: 'Responsável' },
 ]
 
 const displayModal = ref(false)
@@ -90,11 +92,15 @@ const handleEdit = (inventory: Inventory) => {
 }
 
 const handleSave = async () => {
-  if (!newInventory.name) {
+  const parsed = safeParse(InventoryCreateSchema, {
+    name: newInventory.name,
+    description: newInventory.description,
+  })
+  if (!parsed.success) {
     toast.add({
       severity: 'warn',
       summary: 'Atenção',
-      detail: 'O campo Nome é obrigatório.',
+      detail: parsed.issues[0].message,
       life: 3000,
     })
     return
@@ -102,27 +108,21 @@ const handleSave = async () => {
 
   try {
     if (isEditing.value && inventoryToDelete.value) {
-      await updateInventory(inventoryToDelete.value.id, {
-        name: newInventory.name,
-        description: newInventory.description,
-      })
+      await updateInventory(inventoryToDelete.value.id, parsed.output)
 
       toast.add({
         severity: 'success',
         summary: 'Sucesso!',
-        detail: `Inventário "${newInventory.name}" atualizado com sucesso.`,
+        detail: `Inventário "${parsed.output.name}" atualizado com sucesso.`,
         life: 3000,
       })
     } else {
-      await createInventory({
-        name: newInventory.name,
-        description: newInventory.description,
-      })
+      await createInventory(parsed.output)
 
       toast.add({
         severity: 'success',
         summary: 'Sucesso!',
-        detail: `Inventário "${newInventory.name}" criado com sucesso.`,
+        detail: `Inventário "${parsed.output.name}" criado com sucesso.`,
         life: 3000,
       })
     }
@@ -196,9 +196,9 @@ const handleDelete = async () => {
               <template #body="slotProps">
                 <div class="flex gap-2">
                   <Button v-if="canEditInventories" icon="pi pi-pencil" severity="info" size="small"
-                    @click="handleEdit(slotProps.data.inventories)" aria-label="Editar" />
+                    @click="handleEdit(slotProps.data)" aria-label="Editar" />
                   <Button v-if="canDeleteInventories" icon="pi pi-trash" severity="danger" size="small"
-                    @click="confirmDeletion(slotProps.data.inventories)" aria-label="Deletar" />
+                    @click="confirmDeletion(slotProps.data)" aria-label="Deletar" />
                 </div>
               </template>
             </Column>

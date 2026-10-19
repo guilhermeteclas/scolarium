@@ -17,20 +17,20 @@ import LoadingState from '@/components/common/LoadingState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import ConfirmDeleteDialog from '@/components/common/ConfirmDeleteDialog.vue'
 import { useToast } from 'primevue/usetoast'
+import { safeParse } from 'valibot'
 
 import { usePermissions } from '@/composables/usePermissions'
 import { useItems } from '@/composables/useItems'
 import { useInventories } from '@/composables/useInventories'
+import { ItemCreateSchema } from '@/schemas'
 
-import type { Inventory, Item, ItemType } from '@/types'
+import type { Inventory, Item, ItemWithInventory, ItemType } from '@/types'
 
 const toast = useToast()
 const { canCreateItems, canEditItems, canDeleteItems } = usePermissions()
 const { loading, createItem, fetchItems, updateItem, deleteItem } = useItems()
 const { fetchInventories } = useInventories()
 
-
-type ItemWithInventory = Item & { inventory: { id: number; name: string } | null }
 const items = ref<ItemWithInventory[]>([])
 
 // opções PT-BR (valores em EN)
@@ -67,16 +67,16 @@ const displayModal = ref(false)
 
 type FormItem = {
   name: string
-  type: Item['type']
+  type: ItemType
   quantity: number
-  inventory_id: number | null
+  inventoryId: number | null
 }
 
 const newItem = reactive<FormItem>({
   name: '',
   type: '' as ItemType,
   quantity: 0,
-  inventory_id: null,
+  inventoryId: null,
 })
 
 const displayConfirmDelete = ref(false)
@@ -127,7 +127,7 @@ const handleEdit = (item: Item) => {
   newItem.name = item.name
   newItem.type = item.type
   newItem.quantity = item.quantity
-  newItem.inventory_id = item.inventory_id
+  newItem.inventoryId = item.inventoryId
   itemWhithId.value = item
   displayModal.value = true
 }
@@ -138,34 +138,24 @@ const confirmDelete = (item: Item) => {
 }
 
 const handleSave = async () => {
-  if (!newItem.name) {
-    toast.add({ severity: 'warn', summary: 'Atenção', detail: 'O campo Nome é obrigatório.', life: 3000 })
-    return
-  }
-
-  if (!newItem.type) {
-    toast.add({ severity: 'warn', summary: 'Atenção', detail: 'O campo Tipo é obrigatório.', life: 3000 })
-    return
-  }
-
-  const inventoryId = newItem.inventory_id != null ? Number(newItem.inventory_id) : null
-  if (inventoryId == null || Number.isNaN(inventoryId)) {
-    toast.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione um Inventário.', life: 3000 })
+  const parsed = safeParse(ItemCreateSchema, {
+    name: newItem.name,
+    type: newItem.type,
+    quantity: newItem.quantity,
+    inventoryId: newItem.inventoryId,
+  })
+  if (!parsed.success) {
+    toast.add({ severity: 'warn', summary: 'Atenção', detail: parsed.issues[0].message, life: 3000 })
     return
   }
 
   try {
     if (isEditing.value && itemWhithId.value) {
-      await updateItem(itemWhithId.value.id, {
-        name: newItem.name,
-        type: newItem.type,
-        quantity: newItem.quantity,
-        inventory_id: Number(newItem.inventory_id),
-      })
+      await updateItem(itemWhithId.value.id, parsed.output)
       toast.add({
         severity: 'success',
         summary: 'Atualizado!',
-        detail: `Item "${newItem.name}" atualizado com sucesso.`,
+        detail: `Item "${parsed.output.name}" atualizado com sucesso.`,
         life: 3000,
       })
       displayModal.value = false
@@ -176,12 +166,7 @@ const handleSave = async () => {
     }
 
     // CREATE
-    await createItem({
-      name: newItem.name,
-      type: newItem.type,
-      quantity: newItem.quantity,
-      inventory_id: Number(inventoryId),
-    })
+    await createItem(parsed.output)
     toast.add({
       severity: 'success',
       summary: 'Sucesso!',
@@ -287,7 +272,7 @@ const handleDelete = async () => {
 
         <div class="mb-5">
           <label for="inventary" class="font-bold block mb-2">Inventário</label>
-          <Dropdown v-model="newItem.inventory_id" :options="inventories" optionLabel="name" optionValue="id"
+          <Dropdown v-model="newItem.inventoryId" :options="inventories" optionLabel="name" optionValue="id"
             placeholder="Selecione um inventário" class="w-full" id="inventary" />
         </div>
       </div>

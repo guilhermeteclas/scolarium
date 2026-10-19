@@ -6,8 +6,8 @@ export type UserRole = 'admin' | 'manager' | 'user'
 
 export interface Profile {
   id: string
-  first_name: string | null
-  last_name: string | null
+  firstName: string | null
+  lastName: string | null
   role: UserRole
 }
 

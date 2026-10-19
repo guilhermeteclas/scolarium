@@ -9,5 +9,9 @@ export interface Item {
   name: string
   type: ItemType
   quantity: number
-  inventory_id: number
+  inventoryId: number
+}
+
+export interface ItemWithInventory extends Item {
+  inventory: { id: number; name: string } | null
 }

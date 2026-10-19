@@ -15,16 +15,17 @@ import ErrorState from '@/components/common/ErrorState.vue'
 import ConfirmDeleteDialog from '@/components/common/ConfirmDeleteDialog.vue'
 
 import { useToast } from 'primevue/usetoast'
+import { safeParse } from 'valibot'
 import { useRequests } from '@/composables/useRequests'
 import { useItems } from '@/composables/useItems'
 import { usePermissions } from '@/composables/usePermissions'
 import { supabase } from '@/api/client'
+import { RequestWithItemsCreateSchema } from '@/schemas'
 
 import { formatDate } from '@/utils/dateFormatter'
 import { getStatusLabel, getStatusClass } from '@/utils/requestStatus'
-import { getUserName } from '@/utils/userFormatter'
 
-import type { Request, RequestItems, Item } from '@/types'
+import type { Request, RequestItem, Item } from '@/types'
 
 const requests = ref<Request[]>([])
 const error = ref<Error | null>(null)
@@ -34,7 +35,7 @@ const { canViewRequests, canDeleteRequests, canEditRequestStatus, canEditRequest
 const { searchItems, updateItem } = useItems()
 
 const showItemsDialog = ref(false)
-const itemsRequest = ref<RequestItems[]>([])
+const itemsRequest = ref<RequestItem[]>([])
 const itemsLoading = ref(false)
 const currentRequestId = ref<number | null>(null)
 
@@ -43,27 +44,28 @@ const isEditMode = ref(false)
 const editItemsDialog = ref(false)
 const editFormData = ref<{
   details: string | null
-  reservation_start: Date | null
-  reservation_end: Date | null
+  reservationStart: Date | null
+  reservationEnd: Date | null
   status: Request['status']
 }>({
   details: null,
-  reservation_start: null,
-  reservation_end: null,
+  reservationStart: null,
+  reservationEnd: null,
   status: 'open',
 })
 const currentEditingRequest = ref<Request | null>(null)
 const editLoading = ref(false)
 
 // State para gerenciamento de itens na request
-const selectedItems = ref<Map<number, {
-  item: Item;
-  quantity: number;
-  checked_out?: number;
-  returned?: number;
-  original_checked_out?: number;
-  original_returned?: number;
-}>>(new Map())
+type SelectedItemData = {
+  item: Item
+  quantity: number
+  checkedOut?: number
+  returned?: number
+  originalCheckedOut?: number
+  originalReturned?: number
+}
+const selectedItems = ref<Map<number, SelectedItemData>>(new Map())
 const itemSearch = ref('')
 const searchedItems = ref<Item[]>([])
 const itemSearchLoading = ref(false)
@@ -185,8 +187,8 @@ function openEditModal(request?: Request) {
   if (request) {
     editFormData.value = {
       details: request.details,
-      reservation_start: request.reservation_start ? new Date(request.reservation_start) : null,
-      reservation_end: request.reservation_end ? new Date(request.reservation_end) : null,
+      reservationStart: request.reservationStart ? new Date(request.reservationStart) : null,
+      reservationEnd: request.reservationEnd ? new Date(request.reservationEnd) : null,
       status: request.status,
     }
     // Buscar itens da request e popular selectedItems
@@ -199,10 +201,10 @@ function openEditModal(request?: Request) {
             selectedItems.value.set(itemRow.item.id, {
               item: itemRow.item,
               quantity: itemRow.quantity,
-              checked_out: itemRow.checked_out || 0,
+              checkedOut: itemRow.checkedOut || 0,
               returned: itemRow.returned || 0,
-              original_checked_out: itemRow.checked_out || 0,
-              original_returned: itemRow.returned || 0
+              originalCheckedOut: itemRow.checkedOut || 0,
+              originalReturned: itemRow.returned || 0
             })
           }
         })
@@ -216,8 +218,8 @@ function openEditModal(request?: Request) {
   } else {
     editFormData.value = {
       details: null,
-      reservation_start: null,
-      reservation_end: null,
+      reservationStart: null,
+      reservationEnd: null,
       status: 'open', // status sempre 'open' na criação
     }
     selectedItems.value.clear()
@@ -227,51 +229,43 @@ function openEditModal(request?: Request) {
 }
 
 async function handleSaveRequest() {
-  const start = editFormData.value.reservation_start
-  const end = editFormData.value.reservation_end
-  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+  const parsed = safeParse(RequestWithItemsCreateSchema, {
+    details: editFormData.value.details,
+    reservationStart: editFormData.value.reservationStart,
+    reservationEnd: editFormData.value.reservationEnd,
+    status: editFormData.value.status,
+    items: Array.from(selectedItems.value.entries()).map(([itemId, { quantity }]) => ({
+      itemId,
+      quantity,
+    })),
+  })
+  if (!parsed.success) {
     toast.add({
       severity: 'warn',
       summary: 'Aviso',
-      detail: 'Preencha datas válidas de início e término',
+      detail: parsed.issues[0].message,
       life: 3000,
     })
     return
   }
-
-  // Verifica se há itens
-  const itemsArr = Array.from(selectedItems.value.entries()).map(([itemId, { quantity }]) => ({ item_id: itemId, quantity }))
-  if (itemsArr.length === 0) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Itens obrigatórios',
-      detail: 'Selecione ao menos um item para o pedido',
-      life: 3000,
-    })
-    return
-  }
+  const payload = parsed.output
 
   editLoading.value = true
 
   try {
-    const payload = {
-      ...editFormData.value,
-      reservation_start: start.toISOString(),
-      reservation_end: end.toISOString(),
-    }
     if (isEditMode.value && currentEditingRequest.value) {
-      await updateRequest(currentEditingRequest.value.id, payload, itemsArr)
+      await updateRequest(currentEditingRequest.value.id, payload)
       // Atualiza estoque se status for 'ready' ou 'completed'
-      if (editFormData.value.status === 'ready' || editFormData.value.status === 'completed') {
+      if (payload.status === 'ready' || payload.status === 'completed') {
         for (const [itemId, itemData] of selectedItems.value.entries()) {
-          const { item, quantity, checked_out = 0, returned = 0, original_checked_out = 0, original_returned = 0 } = itemData;
+          const { item, quantity, checkedOut = 0, returned = 0, originalCheckedOut = 0, originalReturned = 0 } = itemData;
 
           // Validações
-          if (checked_out < 0) {
+          if (checkedOut < 0) {
             toast.add({ severity: 'warn', summary: 'Valor inválido', detail: `Retirados não pode ser negativo para o item ${item.name}`, life: 4000 })
             continue
           }
-          if (checked_out > quantity) {
+          if (checkedOut > quantity) {
             toast.add({ severity: 'warn', summary: 'Valor inválido', detail: `Retirados não pode ser maior que solicitado para o item ${item.name}`, life: 4000 })
             continue
           }
@@ -279,14 +273,14 @@ async function handleSaveRequest() {
             toast.add({ severity: 'warn', summary: 'Valor inválido', detail: `Devolvidos não pode ser negativo para o item ${item.name}`, life: 4000 })
             continue
           }
-          if (returned > checked_out) {
+          if (returned > checkedOut) {
             toast.add({ severity: 'warn', summary: 'Valor inválido', detail: `Devolvidos não pode ser maior que retirados para o item ${item.name}`, life: 4000 })
             continue
           }
 
           // Calcula o delta (diferença) entre valores antigos e novos
-          const deltaCheckedOut = checked_out - original_checked_out  // Positivo = retirou mais, Negativo = devolveu retirada
-          const deltaReturned = returned - original_returned          // Positivo = devolveu mais
+          const deltaCheckedOut = checkedOut - originalCheckedOut  // Positivo = retirou mais, Negativo = devolveu retirada
+          const deltaReturned = returned - originalReturned          // Positivo = devolveu mais
 
           // Atualiza estoque baseado nos deltas
           // - Retiradas diminuem o estoque (deltaCheckedOut positivo diminui)
@@ -298,9 +292,9 @@ async function handleSaveRequest() {
             try {
               await updateItem(itemId, {
                 name: item.name,
-                type: item.type || '',
+                type: item.type,
                 quantity: newQuantity,
-                inventory_id: item.inventory_id,
+                inventoryId: item.inventoryId,
               })
               // Atualiza a quantidade local para refletir a mudança
               item.quantity = newQuantity
@@ -313,7 +307,7 @@ async function handleSaveRequest() {
           try {
             await supabase
               .from('request_items')
-              .update({ checked_out, returned })
+              .update({ checked_out: checkedOut, returned })
               .eq('request_id', currentEditingRequest.value.id)
               .eq('item_id', itemId)
           } catch {
@@ -322,7 +316,7 @@ async function handleSaveRequest() {
         }
       }
     } else {
-      await createRequest(payload, itemsArr)
+      await createRequest(payload)
       toast.add({
         severity: 'success',
         summary: 'Sucesso!',
@@ -385,16 +379,16 @@ async function handleSaveRequest() {
                       <p class="text-xl m-0 mb-2 flex items-center gap-2">
                         <i class="pi pi-calendar"></i>
                         <span>Início:</span>
-                        <span class="font-medium">{{ fmt(r.reservation_start) }}</span>
+                        <span class="font-medium">{{ fmt(r.reservationStart) }}</span>
                       </p>
                       <p class="text-xl m-0 mb-2 flex items-center gap-2">
                         <i class="pi pi-calendar-plus"></i>
                         <span>Término:</span>
-                        <span class="font-medium">{{ fmt(r.reservation_end) }}</span>
+                        <span class="font-medium">{{ fmt(r.reservationEnd) }}</span>
                       </p>
                       <p class="text-xl m-0 mb-2 flex items-center gap-2">
                         <i class="pi pi-user"></i>
-                        <span class="truncate">{{ getUserName(r) }}</span>
+                        <span class="truncate">{{ r.requesterName }}</span>
                       </p>
                       <p class="text-xl m-0 mb-2 flex items-center gap-2">
                         <i class="pi pi-info-circle"></i>
@@ -449,7 +443,7 @@ async function handleSaveRequest() {
           </div>
 
           <div class="flex gap-4 text-sm text-surface-500 dark:text-surface-400">
-            <span>Retirado: <span class="font-medium">{{ item.checked_out || '-' }}</span></span>
+            <span>Retirado: <span class="font-medium">{{ item.checkedOut || '-' }}</span></span>
             <span>Devolvido: <span class="font-medium">{{ item.returned || '-' }}</span></span>
           </div>
         </div>
@@ -482,7 +476,7 @@ async function handleSaveRequest() {
               <label for="reservation_start" class="font-semibold text-surface-900 dark:text-surface-0">
                 Data de Início *
               </label>
-              <Calendar id="reservation_start" v-model="editFormData.reservation_start" showTime hourFormat="24"
+              <Calendar id="reservation_start" v-model="editFormData.reservationStart" showTime hourFormat="24"
                 dateFormat="dd/mm/yy" required panelClass="min-w-[12rem]"
                 class="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
@@ -492,7 +486,7 @@ async function handleSaveRequest() {
               <label for="reservation_end" class="font-semibold text-surface-900 dark:text-surface-0">
                 Data de Término *
               </label>
-              <Calendar id="reservation_end" v-model="editFormData.reservation_end" showTime hourFormat="24"
+              <Calendar id="reservation_end" v-model="editFormData.reservationEnd" showTime hourFormat="24"
                 dateFormat="dd/mm/yy" required panelClass="min-w-[12rem]"
                 class="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
@@ -537,7 +531,7 @@ async function handleSaveRequest() {
               {{ selectedItems.size }} item(ns) selecionado(s)
             </div>
             <div class="space-y-2">
-              <div v-for="[itemId, { item, quantity, checked_out, returned }] of Array.from(selectedItems.entries())"
+              <div v-for="[itemId, { item, quantity, checkedOut, returned }] of Array.from(selectedItems.entries())"
                 :key="itemId"
                 class="flex items-center justify-between gap-3 p-3 bg-surface-100 dark:bg-surface-800 rounded-lg">
                 <div class="flex-1">
@@ -557,8 +551,8 @@ async function handleSaveRequest() {
                     v-if="isEditMode && (editFormData.status === 'ready' || editFormData.status === 'completed')">
                     <div class="flex flex-col items-center mx-2">
                       <label class="text-xs">Retirados</label>
-                      <input type="number" :value="checked_out" min="0"
-                        @input="(() => { const item = selectedItems.get(itemId); if (item) item.checked_out = parseInt(($event.target as HTMLInputElement).value) })()"
+                      <input type="number" :value="checkedOut" min="0"
+                        @input="(() => { const item = selectedItems.get(itemId); if (item) item.checkedOut = parseInt(($event.target as HTMLInputElement).value) })()"
                         class="w-16 px-2 py-1 border border-primary-300 dark:border-primary-600 rounded bg-surface-0 dark:bg-surface-900 text-primary-900 dark:text-primary-200 text-center focus:outline-none focus:ring-2 focus:ring-primary-500" />
                     </div>
                     <div class="flex flex-col items-center mx-2">

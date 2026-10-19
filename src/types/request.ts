@@ -16,29 +16,20 @@ export type RequestStatus =
 export interface Request {
   id: number
   details: string | null
-  reservation_start: string
-  reservation_end: string
+  reservationStart: string
+  reservationEnd: string
   status: RequestStatus
-  profile_id: string
-  profiles: {
-    first_name: string | null
-    last_name: string | null
-  }
+  profileId: string
+  /** Nome completo do solicitante (mapeado de profiles na query) */
+  requesterName: string | null
 }
 
-export interface RequestItems {
+export interface RequestItem {
   id: number
-  request_id: number
-  item_id: number
+  requestId: number
+  itemId: number
   quantity: number
-  checked_out: number
+  checkedOut: number
   returned: number
   item: Item | null
-}
-
-export interface CreateRequestPayload {
-  details: string | null
-  reservation_start: string
-  reservation_end: string
-  status: RequestStatus
 }

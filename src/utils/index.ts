@@ -15,7 +15,6 @@ export {
 // User utilities
 export {
   getFullName,
-  getUserName,
   getInitials,
   getDisplayName,
 } from './userFormatter'

@@ -1,8 +1,13 @@
 import { ref } from 'vue'
 import { supabase } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
-import type { Inventory, UserInventory } from '@/types'
+import type { Inventory, InventoryWithManager } from '@/types'
 
+/**
+ * Camada de acesso a dados de inventários.
+ * Regra de nomenclatura: snake_case apenas nas queries/rows do Supabase;
+ * o retorno para o domínio é sempre camelCase.
+ */
 export function useInventories() {
   const auth = useAuthStore()
   const loading = ref(false)
@@ -10,6 +15,7 @@ export function useInventories() {
   const USER_INVENTORIES_QUERY = `
     id,
     profiles(
+      id,
       first_name,
       last_name
     ),
@@ -20,6 +26,12 @@ export function useInventories() {
     )
   `
 
+  type UserInventoryRow = {
+    id: number
+    profiles: { id: string; first_name: string | null; last_name: string | null } | null
+    inventories: { id: number; name: string; description: string | null } | null
+  }
+
   async function fetchInventories() {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
@@ -28,7 +40,7 @@ export function useInventories() {
     try {
       const { data, error } = await supabase.from('inventories').select()
       if (error) throw error
-      return data as unknown as Inventory[]
+      return (data ?? []) satisfies Inventory[]
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar inventários'
       throw new Error(message)
@@ -37,7 +49,7 @@ export function useInventories() {
     }
   }
 
-  async function fetchUserInventories() {
+  async function fetchUserInventories(): Promise<InventoryWithManager[]> {
     if (!auth.user) {
       throw new Error('Usuário não autenticado')
     }
@@ -45,7 +57,22 @@ export function useInventories() {
     try {
       const { data, error } = await supabase.from('user_inventories').select(USER_INVENTORIES_QUERY)
       if (error) throw error
-      return data as unknown as UserInventory[]
+      const rows = (data ?? []) as unknown as UserInventoryRow[]
+      return rows.flatMap((row) => {
+        if (!row.inventories) return []
+        return [
+          {
+            ...row.inventories,
+            manager: row.profiles
+              ? {
+                  id: row.profiles.id,
+                  firstName: row.profiles.first_name,
+                  lastName: row.profiles.last_name,
+                }
+              : null,
+          } satisfies InventoryWithManager,
+        ]
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar inventários de usuários'
       throw new Error(message)

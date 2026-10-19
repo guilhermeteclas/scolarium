@@ -2,42 +2,36 @@
  * Utilitários para formatação de nomes de usuários
  */
 
-import type { Request } from '@/types'
+type ProfileName = {
+  firstName?: string | null
+  lastName?: string | null
+}
 
 /**
  * Extrai o nome completo de um perfil
- * @param profile - Objeto profile com first_name e last_name
+ * @param profile - Objeto profile com firstName e lastName
  * @returns Nome completo ou '—' se não encontrado
  */
-export function getFullName(profile?: { first_name?: string | null; last_name?: string | null } | null): string {
+export function getFullName(profile?: ProfileName | null): string {
   if (!profile) return '—'
 
-  const firstName = profile.first_name || ''
-  const lastName = profile.last_name || ''
+  const firstName = profile.firstName || ''
+  const lastName = profile.lastName || ''
   const fullName = `${firstName} ${lastName}`.trim()
 
   return fullName || '—'
 }
 
 /**
- * Extrai o nome completo do usuário de um request
- * @param request - Request contendo objeto profiles
- * @returns Nome completo ou '—' se não encontrado
- */
-export function getUserName(request: Request): string {
-  return getFullName(request.profiles)
-}
-
-/**
  * Extrai as iniciais de um nome
- * @param profile - Objeto profile com first_name e last_name
+ * @param profile - Objeto profile com firstName e lastName
  * @returns Iniciais (ex: "JD" para "John Doe") ou "?" se não encontrado
  */
-export function getInitials(profile?: { first_name?: string | null; last_name?: string | null } | null): string {
+export function getInitials(profile?: ProfileName | null): string {
   if (!profile) return '?'
 
-  const firstName = profile.first_name?.trim() || ''
-  const lastName = profile.last_name?.trim() || ''
+  const firstName = profile.firstName?.trim() || ''
+  const lastName = profile.lastName?.trim() || ''
 
   if (!firstName && !lastName) return '?'
 
@@ -49,14 +43,14 @@ export function getInitials(profile?: { first_name?: string | null; last_name?: 
 
 /**
  * Formata o nome para exibição (Primeiro nome + inicial do sobrenome)
- * @param profile - Objeto profile com first_name e last_name
+ * @param profile - Objeto profile com firstName e lastName
  * @returns Nome formatado (ex: "John D.") ou '—' se não encontrado
  */
-export function getDisplayName(profile?: { first_name?: string | null; last_name?: string | null } | null): string {
+export function getDisplayName(profile?: ProfileName | null): string {
   if (!profile) return '—'
 
-  const firstName = profile.first_name?.trim() || ''
-  const lastName = profile.last_name?.trim() || ''
+  const firstName = profile.firstName?.trim() || ''
+  const lastName = profile.lastName?.trim() || ''
 
   if (!firstName && !lastName) return '—'
   if (!lastName) return firstName

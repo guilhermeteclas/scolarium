@@ -29,7 +29,9 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       profile.value = {
-        ...data,
+        id: data.id,
+        firstName: data.first_name,
+        lastName: data.last_name,
         role: normalizeRole(data.role),
       }
     } catch (e) {

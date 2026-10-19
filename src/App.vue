@@ -73,7 +73,7 @@ const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
                   shape="circle" />
                 <div class="flex flex-col">
                   <span class="text-xs font-medium text-surface-900 dark:text-surface-0">
-                    {{ auth.profile?.first_name }} {{ auth.profile?.last_name }}
+                    {{ auth.profile?.firstName }} {{ auth.profile?.lastName }}
                   </span>
                   <span class="text-xs text-surface-500 dark:text-surface-400">
                     {{ auth.user?.email }}
