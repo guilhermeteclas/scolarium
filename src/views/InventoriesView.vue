@@ -1,26 +1,27 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 
-// Componentes PrimeVue
-import Card from 'primevue/card'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import Textarea from 'primevue/textarea'
-
 
 import PageHeader from '@/components/common/PageHeader.vue'
-import LoadingState from '@/components/common/LoadingState.vue'
-import ErrorState from '@/components/common/ErrorState.vue'
 import ConfirmDeleteDialog from '@/components/common/ConfirmDeleteDialog.vue'
+import EntityDataTable, { type EntityColumn } from '@/components/ui/EntityDataTable.vue'
+import EntityModal from '@/components/forms/EntityModal.vue'
+import FormField from '@/components/forms/FormField.vue'
+import FormTextarea from '@/components/forms/FormTextarea.vue'
+
 import { useToast } from 'primevue/usetoast'
 import { safeParse } from 'valibot'
 
 import { useInventories } from '@/composables/useInventories'
 import { usePermissions } from '@/composables/usePermissions'
-import { InventoryCreateSchema, InventoryUpdateSchema } from '@/schemas'
+import {
+  InventoryCreateSchema,
+  InventoryUpdateSchema,
+  fieldErrorsFor,
+  type FieldErrors,
+} from '@/schemas'
 import type { Inventory, InventoryWithManager } from '@/types'
 
 // Inicialização de hooks
@@ -33,8 +34,9 @@ const { loading, createInventory, deleteInventory, updateInventory, fetchUserInv
 const inventories = ref<InventoryWithManager[]>([])
 const error = ref<Error | null>(null)
 const isEditing = ref(false)
+const fieldErrors = ref<FieldErrors>({})
 
-const columns = [
+const columns: EntityColumn[] = [
   { field: 'id', header: 'ID' },
   { field: 'name', header: 'Nome do Inventário' },
   { field: 'description', header: 'Descrição do Local' },
@@ -75,6 +77,7 @@ const openModal = () => {
   newInventory.name = ''
   newInventory.description = ''
   inventoryToDelete.value = null
+  fieldErrors.value = {}
   displayModal.value = true
 }
 
@@ -88,6 +91,7 @@ const handleEdit = (inventory: Inventory) => {
   newInventory.name = inventory.name
   newInventory.description = inventory.description || ''
   inventoryToDelete.value = inventory
+  fieldErrors.value = {}
   displayModal.value = true
 }
 
@@ -99,14 +103,11 @@ const handleSave = async () => {
   // Schema de atualização no modo edição; de criação caso contrário
   const parsed = safeParse(isEditing.value ? InventoryUpdateSchema : InventoryCreateSchema, formValues)
   if (!parsed.success) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Atenção',
-      detail: parsed.issues[0].message,
-      life: 3000,
-    })
+    // Erros exibidos abaixo de cada campo
+    fieldErrors.value = fieldErrorsFor(parsed.issues, ['name', 'description'])
     return
   }
+  fieldErrors.value = {}
 
   try {
     if (isEditing.value && inventoryToDelete.value) {
@@ -185,49 +186,37 @@ const handleDelete = async () => {
     </PageHeader>
 
     <!-- Tabela de dados -->
-    <Card class="shadow-sm border border-surface-200 dark:border-surface-700">
-      <template #content>
-        <LoadingState v-if="loading" />
-        <ErrorState v-else-if="error" :error="error" @retry="loadInventories" />
+    <div class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-sm border border-surface-200 dark:border-surface-700">
+      <EntityDataTable :data="inventories" :columns="columns" :loading="loading" :error="error"
+        empty-message="Nenhum inventário encontrado." @retry="loadInventories">
+        <template v-slot:[`cell-manager.firstName`]="{ data }">
+          {{ data.manager ? `${data.manager.firstName ?? ''} ${data.manager.lastName ?? ''}`.trim() || '—' : '—' }}
+        </template>
 
-        <div v-else>
-          <DataTable :value="inventories" tableStyle="min-width: 50rem">
-            <Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header"></Column>
+        <template #actions="{ data }">
+          <div class="flex gap-2">
+            <Button v-if="canEditInventories" icon="pi pi-pencil" severity="info" size="small"
+              @click="handleEdit(data)" aria-label="Editar" />
+            <Button v-if="canDeleteInventories" icon="pi pi-trash" severity="danger" size="small"
+              @click="confirmDeletion(data)" aria-label="Deletar" />
+          </div>
+        </template>
+      </EntityDataTable>
+    </div>
 
-            <Column header="Ações" headerStyle="width: 10rem" class="text-center">
-              <template #body="slotProps">
-                <div class="flex gap-2">
-                  <Button v-if="canEditInventories" icon="pi pi-pencil" severity="info" size="small"
-                    @click="handleEdit(slotProps.data)" aria-label="Editar" />
-                  <Button v-if="canDeleteInventories" icon="pi pi-trash" severity="danger" size="small"
-                    @click="confirmDeletion(slotProps.data)" aria-label="Deletar" />
-                </div>
-              </template>
-            </Column>
-          </DataTable>
-        </div>
-      </template>
-    </Card>
-
-    <Dialog v-model:visible="displayModal" :header="isEditing ? 'Editar Inventário' : 'Adicionar Novo Inventário'"
-      :modal="true" :draggable="false" class="w-full md:w-3/5 lg:w-2/5">
+    <EntityModal v-model:visible="displayModal"
+      :title="isEditing ? 'Editar Inventário' : 'Adicionar Novo Inventário'" @save="handleSave">
       <div class="p-fluid">
-        <div class="mb-5">
-          <label for="name" class="font-bold block mb-2">Nome</label>
-          <InputText id="name" v-model="newInventory.name" class="w-full" :required="true" />
-        </div>
+        <FormField id="name" label="Nome" required :error="fieldErrors.name">
+          <InputText id="name" v-model="newInventory.name" class="w-full" :required="true"
+            :aria-invalid="fieldErrors.name ? 'true' : undefined"
+            :aria-describedby="fieldErrors.name ? 'name-error' : undefined" />
+        </FormField>
 
-        <div class="mb-5">
-          <label for="description" class="font-bold block mb-2">Descrição</label>
-          <Textarea id="description" v-model="newInventory.description" rows="5" class="w-full" />
-        </div>
+        <FormTextarea id="description" label="Descrição" v-model="newInventory.description" :rows="5"
+          :error="fieldErrors.description" />
       </div>
-
-      <template #footer>
-        <Button label="Cancelar" icon="pi pi-times" @click="displayModal = false" text />
-        <Button :label="isEditing ? 'Atualizar' : 'Salvar'" icon="pi pi-check" @click="handleSave" autofocus />
-      </template>
-    </Dialog>
+    </EntityModal>
 
     <ConfirmDeleteDialog v-model:visible="displayConfirmDelete"
       :message="inventoryToDelete ? `Você realmente deseja deletar o inventário <b class='text-red-500'>${inventoryToDelete.name}</b>? Esta ação é irreversível. Todos os itens vinculados a esse inventário também serão excluidos.` : ''"

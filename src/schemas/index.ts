@@ -24,3 +24,7 @@ export type { RequestWithItemsCreateDto, RequestItemInputDto } from './request.s
 // User
 export { UserRoleUpdateSchema } from './user.schema'
 export type { UserRoleUpdateDto } from './user.schema'
+
+// Helpers de erro por campo
+export { fieldErrorsFor } from './issues'
+export type { FieldErrors } from './issues'

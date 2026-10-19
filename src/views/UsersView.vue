@@ -2,14 +2,11 @@
 import { ref } from 'vue'
 
 import Card from 'primevue/card'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 
 import PageHeader from '@/components/common/PageHeader.vue'
-import LoadingState from '@/components/common/LoadingState.vue'
-import ErrorState from '@/components/common/ErrorState.vue'
+import EntityDataTable, { type EntityColumn } from '@/components/ui/EntityDataTable.vue'
 
 import { useToast } from 'primevue/usetoast'
 import { safeParse } from 'valibot'
@@ -40,7 +37,7 @@ const ROLE_OPTIONS: Array<{ label: string; value: UserRole }> = [
   { label: 'Usuário', value: 'user' },
 ]
 
-const columns = [
+const columns: EntityColumn[] = [
   { field: 'firstName', header: 'Nome' },
   { field: 'email', header: 'E-mail' },
   { field: 'role', header: 'Papel' },
@@ -108,49 +105,31 @@ async function handleSaveRole(user: UserView) {
 
     <Card class="shadow-sm border border-surface-200 dark:border-surface-700">
       <template #content>
-        <LoadingState v-if="loading" />
-        <ErrorState v-else-if="error" :error="error" @retry="loadUsers" />
+        <EntityDataTable :data="users" :columns="columns" :loading="loading" :error="error"
+          empty-message="Nenhum usuário encontrado." actions-width="16rem" @retry="loadUsers">
+          <template #cell-firstName="{ data }">
+            {{ data.firstName }} {{ data.lastName }}
+          </template>
 
-        <div v-else>
-          <DataTable :value="users" tableStyle="min-width: 50rem">
-            <Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header">
-              <template #body="slotProps">
-                <template v-if="col.field === 'firstName'">
-                  {{ slotProps.data.firstName }} {{ slotProps.data.lastName }}
-                </template>
-                <template v-else-if="col.field === 'role'">
-                  {{ ROLE_OPTIONS.find(o => o.value === slotProps.data.role)?.label ?? slotProps.data.role }}
-                </template>
-                <template v-else>
-                  {{ slotProps.data[col.field] ?? '—' }}
-                </template>
-              </template>
-            </Column>
+          <template #cell-role="{ data }">
+            {{ ROLE_OPTIONS.find(o => o.value === data.role)?.label ?? data.role }}
+          </template>
 
-            <Column header="Ações" headerStyle="width: 16rem">
-              <template #body="slotProps">
-                <div class="flex items-center gap-2">
-                  <Dropdown v-model="roleDrafts[slotProps.data.id]" :options="ROLE_OPTIONS" optionLabel="label"
-                    optionValue="value" placeholder="Papel" class="w-40" :disabled="!canManageUsers"
-                    :aria-label="`Papel de ${slotProps.data.firstName ?? slotProps.data.email}`" />
-                  <Button v-if="canManageUsers" icon="pi pi-check" severity="success" size="small"
-                    :disabled="!hasChanges(slotProps.data)" aria-label="Salvar papel"
-                    @click="handleSaveRole(slotProps.data)" />
-                </div>
-              </template>
-            </Column>
+          <template #actions="{ data }">
+            <div class="flex items-center gap-2">
+              <Dropdown v-model="roleDrafts[data.id]" :options="ROLE_OPTIONS" optionLabel="label"
+                optionValue="value" placeholder="Papel" class="w-40" :disabled="!canManageUsers"
+                :aria-label="`Papel de ${data.firstName ?? data.email}`" />
+              <Button v-if="canManageUsers" icon="pi pi-check" severity="success" size="small"
+                :disabled="!hasChanges(data)" aria-label="Salvar papel"
+                @click="handleSaveRole(data)" />
+            </div>
+          </template>
+        </EntityDataTable>
 
-            <template #empty>
-              <div class="text-center p-6 text-surface-500 dark:text-surface-400">
-                Nenhum usuário encontrado.
-              </div>
-            </template>
-          </DataTable>
-
-          <p class="text-xs text-surface-500 dark:text-surface-400 mt-3">
-            Dica: você não pode alterar o próprio papel. Alterações valem imediatamente após salvar.
-          </p>
-        </div>
+        <p class="text-xs text-surface-500 dark:text-surface-400 mt-3">
+          Dica: você não pode alterar o próprio papel. Alterações valem imediatamente após salvar.
+        </p>
       </template>
     </Card>
   </div>

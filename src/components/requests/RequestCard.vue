@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Button from 'primevue/button'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 
 import { formatDate } from '@/utils/dateFormatter'
-import { getStatusLabel, getStatusClass } from '@/utils/requestStatus'
 
 import type { Request } from '@/types'
 
@@ -31,9 +31,7 @@ const fmt = formatDate
           hover:border-primary-400 transition-all">
       <div class="flex items-start justify-between mb-3">
         <span class="text-xl font-medium">Pedido {{ request.id }}</span>
-        <span class="text-xl font-semibold px-2 py-1 rounded-md" :class="getStatusClass(request.status)">
-          {{ getStatusLabel(request.status) }}
-        </span>
+        <StatusBadge :status="request.status" />
       </div>
 
       <div class="space-y-10">
