@@ -24,11 +24,8 @@ export function usePermissions() {
   })
 
   // Permissões para Dashboard
-  const canViewDashboard = computed(() => {
-    const result = isAdmin.value
-    //const result = isAdmin.value || isManager.value
-    return result
-  })
+  // Alinhado com RLS e sumário de policies: admin e manager acessam
+  const canViewDashboard = computed(() => isAdmin.value || isManager.value)
 
   // Permissões para Inventários
   const canViewInventories = computed(() => isAdmin.value || isManager.value)

@@ -20,3 +20,7 @@ export type { ItemCreateDto, ItemUpdateDto } from './item.schema'
 // Request
 export { RequestWithItemsCreateSchema, RequestItemInputSchema } from './request.schema'
 export type { RequestWithItemsCreateDto, RequestItemInputDto } from './request.schema'
+
+// User
+export { UserRoleUpdateSchema } from './user.schema'
+export type { UserRoleUpdateDto } from './user.schema'

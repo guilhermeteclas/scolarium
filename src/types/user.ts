@@ -11,10 +11,14 @@ export interface Profile {
   role: UserRole
 }
 
+/**
+ * Visão de usuário para a listagem de gestão (admin).
+ * email é espelhado de auth.users via trigger no signup.
+ */
 export interface UserView {
   id: string
-  name: string | null
-  email: string
-  phone: string | null
-  role: UserRole | null
+  firstName: string | null
+  lastName: string | null
+  email: string | null
+  role: UserRole
 }

@@ -26,7 +26,12 @@ const routes = [
   {
     path: '/requests',
     component: () => import('@/views/RequestsView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresPermission: 'canViewRequests' },
+  },
+  {
+    path: '/users',
+    component: () => import('@/views/UsersView.vue'),
+    meta: { requiresAuth: true, requiresPermission: 'canViewUsers' },
   },
   { path: '/login', component: () => import('@/views/LoginView.vue') },
 ]
@@ -135,19 +140,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Redireciona managers para /requests se tentarem acessar rotas não permitidas
-  if (
-    auth.profile?.role === 'manager' &&
-    to.path === '/dashboard' // Bloqueia apenas o acesso ao dashboard
-  ) {
-    toast.add({
-      severity: 'info',
-      summary: 'Redirecionado',
-      detail: 'Solicite ao admin do sistema acesso ao dashboard.',
-      life: 3000,
-    })
-    next('/inventories')
-    return
-  }
+  // (dashboard liberado para manager — alinhado com RLS na Tarefa 4.2)
 
   // Verifica permissões
   const permissionRedirect = checkPermissions(to, auth, toast)

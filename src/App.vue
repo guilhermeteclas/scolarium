@@ -9,7 +9,7 @@ import { usePermissions } from '@/composables/usePermissions'
 
 const auth = useAuthStore()
 const { authItem } = useNavigation()
-const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
+const { canViewDashboard, canViewInventories, canViewItems, canViewUsers } = usePermissions()
 </script>
 
 <template>
@@ -60,6 +60,12 @@ const { canViewDashboard, canViewInventories, canViewItems } = usePermissions()
               active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold">
               <i class="pi pi-list text-sm"></i>
               <span class="hidden sm:inline font-medium">Pedidos</span>
+            </RouterLink>
+            <RouterLink v-if="canViewUsers" to="/users"
+              class="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 rounded-lg text-xs md:text-sm text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 whitespace-nowrap"
+              active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-semibold">
+              <i class="pi pi-users text-sm"></i>
+              <span class="hidden sm:inline font-medium">Usuários</span>
             </RouterLink>
           </div>
 
