@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import type { Item } from '@/types'
 
@@ -49,7 +49,7 @@ export function useItems() {
     }
   }
 
-  async function createItems(data: ItemInsert): Promise<{ id: number }> {
+  async function createItem(data: ItemInsert): Promise<{ id: number }> {
     if (!auth.user) throw new Error('Usuário não autenticado')
     const { data: inserted, error } = await supabase
       .from('items')
@@ -138,7 +138,7 @@ export function useItems() {
   return {
     loading,
     fetchItems,
-    createItems,
+    createItem,
     updateItem,
     deleteItem,
     searchItems,

@@ -7,7 +7,7 @@ export type ItemType = 'material' | 'service' | 'equipment'
 export interface Item {
   id: number
   name: string
-  type: ItemType | null
+  type: ItemType
   quantity: number
   inventory_id: number
 }

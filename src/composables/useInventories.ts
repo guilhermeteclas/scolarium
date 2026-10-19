@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import type { Inventory, UserInventory } from '@/types'
 

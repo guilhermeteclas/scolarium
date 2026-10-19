@@ -3,7 +3,7 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import { ref } from 'vue'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/api/client'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 

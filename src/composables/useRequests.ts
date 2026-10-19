@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { REQUEST_STATUS_ORDER } from '@/utils/requestStatus'
 import type { Request, RequestItems, CreateRequestPayload } from '@/types'
@@ -93,7 +93,7 @@ export function useRequests() {
         .select()
 
       if (error) throw error
-      const request = data?.[0] as Request
+      const request = data?.[0] as unknown as Request
       if (request && items && items.length > 0) {
         await addRequestItems(request.id, items)
       }
@@ -120,7 +120,7 @@ export function useRequests() {
         .select()
 
       if (error) throw error
-      const request = data?.[0] as Request
+      const request = data?.[0] as unknown as Request
       if (request && items) {
         await removeRequestItems(requestId)
         await addRequestItems(requestId, items)

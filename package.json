@@ -13,7 +13,12 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset",
+    "supabase:status": "supabase status",
+    "supabase:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.3",
@@ -46,6 +51,7 @@
     "npm-run-all2": "^8.0.4",
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
+    "supabase": "^2.121.0",
     "typescript": "~5.9.3",
     "vite": "^8.3.4",
     "vite-plugin-vue-devtools": "^8.2.1",

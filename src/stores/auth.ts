@@ -2,9 +2,15 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useToast } from 'primevue/usetoast'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/api/client'
 import type { User } from '@supabase/supabase-js'
-import type { Profile } from '@/types'
+import type { Profile, UserRole } from '@/types'
+
+const USER_ROLES: readonly UserRole[] = ['admin', 'manager', 'user']
+
+function normalizeRole(role: string | null | undefined): UserRole {
+  return USER_ROLES.includes(role as UserRole) ? (role as UserRole) : 'user'
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -22,7 +28,10 @@ export const useAuthStore = defineStore('auth', () => {
         return
       }
 
-      profile.value = data
+      profile.value = {
+        ...data,
+        role: normalizeRole(data.role),
+      }
     } catch (e) {
       console.error('[AUTH] Erro ao buscar profile:', e)
       profile.value = null

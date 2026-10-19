@@ -22,18 +22,16 @@ import { usePermissions } from '@/composables/usePermissions'
 import { useItems } from '@/composables/useItems'
 import { useInventories } from '@/composables/useInventories'
 
-import type { Inventory, Item } from '@/types'
+import type { Inventory, Item, ItemType } from '@/types'
 
 const toast = useToast()
 const { canCreateItems, canEditItems, canDeleteItems } = usePermissions()
-const { loading, createItems, fetchItems, updateItem, deleteItem } = useItems()
+const { loading, createItem, fetchItems, updateItem, deleteItem } = useItems()
 const { fetchInventories } = useInventories()
 
 
 type ItemWithInventory = Item & { inventory: { id: number; name: string } | null }
 const items = ref<ItemWithInventory[]>([])
-
-type ItemType = NonNullable<Item['type']> // 'material' | 'service' | 'equipment'
 
 // opções PT-BR (valores em EN)
 type TypeOption = { label: string; value: ItemType }
@@ -76,7 +74,7 @@ type FormItem = {
 
 const newItem = reactive<FormItem>({
   name: '',
-  type: null,
+  type: '' as ItemType,
   quantity: 0,
   inventory_id: null,
 })
@@ -119,7 +117,7 @@ loadInventories()
 const openModal = () => {
   isEditing.value = false
   newItem.name = ''
-  newItem.type = null
+  newItem.type = '' as ItemType
   itemWhithId.value = null
   displayModal.value = true
 }
@@ -178,7 +176,7 @@ const handleSave = async () => {
     }
 
     // CREATE
-    await createItems({
+    await createItem({
       name: newItem.name,
       type: newItem.type,
       quantity: newItem.quantity,

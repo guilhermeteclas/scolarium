@@ -18,7 +18,7 @@ import { useToast } from 'primevue/usetoast'
 import { useRequests } from '@/composables/useRequests'
 import { useItems } from '@/composables/useItems'
 import { usePermissions } from '@/composables/usePermissions'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/api/client'
 
 import { formatDate } from '@/utils/dateFormatter'
 import { getStatusLabel, getStatusClass } from '@/utils/requestStatus'

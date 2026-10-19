@@ -18,7 +18,7 @@ export interface Request {
   details: string | null
   reservation_start: string
   reservation_end: string
-  status: RequestStatus | null
+  status: RequestStatus
   profile_id: string
   profiles: {
     first_name: string | null
@@ -40,5 +40,5 @@ export interface CreateRequestPayload {
   details: string | null
   reservation_start: string
   reservation_end: string
-  status: Request['status']
+  status: RequestStatus
 }
