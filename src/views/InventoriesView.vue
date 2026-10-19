@@ -20,7 +20,7 @@ import { safeParse } from 'valibot'
 
 import { useInventories } from '@/composables/useInventories'
 import { usePermissions } from '@/composables/usePermissions'
-import { InventoryCreateSchema } from '@/schemas'
+import { InventoryCreateSchema, InventoryUpdateSchema } from '@/schemas'
 import type { Inventory, InventoryWithManager } from '@/types'
 
 // Inicialização de hooks
@@ -92,10 +92,12 @@ const handleEdit = (inventory: Inventory) => {
 }
 
 const handleSave = async () => {
-  const parsed = safeParse(InventoryCreateSchema, {
+  const formValues = {
     name: newInventory.name,
     description: newInventory.description,
-  })
+  }
+  // Schema de atualização no modo edição; de criação caso contrário
+  const parsed = safeParse(isEditing.value ? InventoryUpdateSchema : InventoryCreateSchema, formValues)
   if (!parsed.success) {
     toast.add({
       severity: 'warn',
@@ -228,7 +230,7 @@ const handleDelete = async () => {
     </Dialog>
 
     <ConfirmDeleteDialog v-model:visible="displayConfirmDelete"
-      :message="inventoryToDelete ? `Você realmente deseja deletar o inventário <b class='text-red-500'>${inventoryToDelete.name}</b>? Esta ação é irreversível. Todos os itens vinculados a esse inventátrio também serão excluidos.` : ''"
+      :message="inventoryToDelete ? `Você realmente deseja deletar o inventário <b class='text-red-500'>${inventoryToDelete.name}</b>? Esta ação é irreversível. Todos os itens vinculados a esse inventário também serão excluidos.` : ''"
       confirm-label="Sim, Deletar" cancel-label="Não" @confirm="handleDelete" />
   </div>
 </template>

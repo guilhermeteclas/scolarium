@@ -1,9 +1,10 @@
 import { ref } from 'vue'
-import { supabase } from '@/api/client'
-import { useAuthStore } from '@/stores/auth'
+import * as dashboardService from '@/api/services/dashboard.service'
 
+/**
+ * ViewModel do dashboard: carrega contagens via service.
+ */
 export function useDashboard() {
-  const auth = useAuthStore()
   const loading = ref(false)
 
   const totalInventarios = ref(0)
@@ -11,28 +12,12 @@ export function useDashboard() {
   const pedidosPendentes = ref(0)
 
   async function loadStats() {
-    if (!auth.user) throw new Error('Usuário não autenticado')
     loading.value = true
-
     try {
-      const { count: inventariosCount } = await supabase
-        .from('inventories')
-        .select('*', { count: 'exact', head: true })
-
-      totalInventarios.value = inventariosCount || 0
-
-      const { count: itensCount } = await supabase
-        .from('items')
-        .select('*', { count: 'exact', head: true })
-
-      totalItens.value = itensCount || 0
-
-      const { count: pedidosCount } = await supabase
-        .from('requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-
-      pedidosPendentes.value = pedidosCount || 0
+      const stats = await dashboardService.getStats()
+      totalInventarios.value = stats.inventories
+      totalItens.value = stats.items
+      pedidosPendentes.value = stats.pendingRequests
     } finally {
       loading.value = false
     }

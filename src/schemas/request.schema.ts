@@ -16,6 +16,8 @@ function reservationDate(label: string) {
 
 /**
  * DTO de item do pedido (entra via formulário).
+ * checkedOut/returned são enviados quando o formulário exibe
+ * retirada/devolução (status ready/completed); default 0.
  */
 export const RequestItemInputSchema = v.object({
   itemId: v.pipe(
@@ -29,6 +31,24 @@ export const RequestItemInputSchema = v.object({
     v.toNumber('Quantidade inválida'),
     v.integer('Quantidade deve ser um número inteiro'),
     v.minValue(1, 'Quantidade mínima é 1'),
+  ),
+  checkedOut: v.optional(
+    v.pipe(
+      v.unknown(),
+      v.toNumber('Retirados inválidos'),
+      v.integer('Retirados deve ser um número inteiro'),
+      v.minValue(0, 'Retirados não pode ser negativo'),
+    ),
+    0,
+  ),
+  returned: v.optional(
+    v.pipe(
+      v.unknown(),
+      v.toNumber('Devolvidos inválidos'),
+      v.integer('Devolvidos deve ser um número inteiro'),
+      v.minValue(0, 'Devolvidos não pode ser negativo'),
+    ),
+    0,
   ),
 })
 

@@ -80,7 +80,7 @@ const newItem = reactive<FormItem>({
 })
 
 const displayConfirmDelete = ref(false)
-const itemWhithId = ref<Item | null>(null)
+const itemWithId = ref<Item | null>(null)
 
 async function loadItems() {
   try {
@@ -118,7 +118,7 @@ const openModal = () => {
   isEditing.value = false
   newItem.name = ''
   newItem.type = '' as ItemType
-  itemWhithId.value = null
+  itemWithId.value = null
   displayModal.value = true
 }
 
@@ -128,12 +128,12 @@ const handleEdit = (item: Item) => {
   newItem.type = item.type
   newItem.quantity = item.quantity
   newItem.inventoryId = item.inventoryId
-  itemWhithId.value = item
+  itemWithId.value = item
   displayModal.value = true
 }
 
 const confirmDelete = (item: Item) => {
-  itemWhithId.value = item
+  itemWithId.value = item
   displayConfirmDelete.value = true
 }
 
@@ -150,8 +150,8 @@ const handleSave = async () => {
   }
 
   try {
-    if (isEditing.value && itemWhithId.value) {
-      await updateItem(itemWhithId.value.id, parsed.output)
+    if (isEditing.value && itemWithId.value) {
+      await updateItem(itemWithId.value.id, parsed.output)
       toast.add({
         severity: 'success',
         summary: 'Atualizado!',
@@ -160,7 +160,7 @@ const handleSave = async () => {
       })
       displayModal.value = false
       isEditing.value = false
-      itemWhithId.value = null
+      itemWithId.value = null
       await loadItems()
       return
     }
@@ -183,23 +183,23 @@ const handleSave = async () => {
 }
 
 const handleDelete = async () => {
-  if (!itemWhithId.value?.id) return
+  if (!itemWithId.value?.id) return
 
   try {
-    await deleteItem(itemWhithId.value.id)
+    await deleteItem(itemWithId.value.id)
 
     toast.add({
       severity: 'success',
       summary: 'Sucesso!',
-      detail: `Inventário "${itemWhithId.value.name}" deletado.`,
+      detail: `Item "${itemWithId.value.name}" deletado.`,
       life: 3000,
     })
 
     displayConfirmDelete.value = false
-    itemWhithId.value = null
+    itemWithId.value = null
     await loadItems()
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Erro ao deletar inventário'
+    const message = e instanceof Error ? e.message : 'Erro ao deletar item'
     toast.add({
       severity: 'error',
       summary: 'Erro na Deleção',
@@ -284,7 +284,7 @@ const handleDelete = async () => {
     </Dialog>
 
     <ConfirmDeleteDialog v-model:visible="displayConfirmDelete"
-      :message="itemWhithId ? `Você realmente deseja deletar o item <b class='text-red-500'>${itemWhithId.name}</b>? Esta ação é irreversível.` : ''"
+      :message="itemWithId ? `Você realmente deseja deletar o item <b class='text-red-500'>${itemWithId.name}</b>? Esta ação é irreversível.` : ''"
       confirm-label="Sim, Deletar" cancel-label="Não" @confirm="handleDelete" />
   </div>
 </template>

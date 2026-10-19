@@ -4,7 +4,6 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import { ref } from 'vue'
 import { safeParse } from 'valibot'
-import { supabase } from '@/api/client'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { LoginSchema } from '@/schemas'
@@ -28,15 +27,15 @@ async function signIn() {
 
   loading.value = true
   errorMsg.value = null
-  const { error } = await supabase.auth.signInWithPassword({
-    email: parsed.output.email,
-    password: parsed.output.password,
-  })
-  if (error) {
-    errorMsg.value = error.message
+  try {
+    await auth.signIn(parsed.output.email, parsed.output.password)
+    // Redireciona apenas após login bem-sucedido
+    router.push('/dashboard')
+  } catch (e) {
+    errorMsg.value = e instanceof Error ? e.message : 'Erro ao entrar'
+  } finally {
+    loading.value = false
   }
-  loading.value = false
-  router.push('/dashboard')
 }
 </script>
 
