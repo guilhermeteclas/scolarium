@@ -10,11 +10,10 @@
 > - Testes: **Vitest** + **@vue/test-utils** + **MSW** para mocks de API
 >
 > **Status de execução (22/10/2026):**
-> - ✅ Concluídas: 1.1–1.5, 2.1–2.2, 3.1–3.4, 4.1–4.3, 5.1–5.2, 6.1–6.2
+> - ✅ Concluídas: 1.1–1.5, 2.1–2.2, 3.1–3.4, 4.1–4.3, 5.1–5.2, 6.1–6.2, 6.4, 7.1, 7.2
 > - ⏳ Em validação: 6.3 (workflow criado; aguardando o primeiro run no GitHub Actions)
-> - ⬜ Pendentes: 6.4, 7.1, 7.2
-> - ⚠️ Pendência técnica: restam 8 casts `as unknown as` em `src/api/repositories/`
->   (queries com join), contrariando o critério "sem casts forçados".
+> - ⚠️ Pendências técnicas: restam 8 casts `as unknown as` em `src/api/repositories/`
+>   (queries com join) e os services ainda não reaplicam o schema Valibot.
 
 ---
 
@@ -664,7 +663,7 @@ export async function updateRequestWithItems(
 - Ou simples CI rigoroso (recomendado inicialmente para não adicionar fricção).
 
 **Critérios de aceitação:**
-- [ ] Decisão registrada em `docs/ARCHITECTURE.md`.
+- [x] Decisão registrada em `docs/ARCHITECTURE.md`.
 
 ---
 
@@ -683,7 +682,7 @@ export async function updateRequestWithItems(
 - Como contribuir.
 
 **Critérios de aceitação:**
-- [ ] README reflete o projeto real e não o template do Vite.
+- [x] README reflete o projeto real e não o template do Vite.
 
 ---
 
@@ -697,7 +696,7 @@ export async function updateRequestWithItems(
 - Como gerar tipos do Supabase.
 
 **Critérios de aceitação:**
-- [ ] Documento criado e revisado.
+- [x] Documento criado e revisado.
 
 ---
 
@@ -780,7 +779,7 @@ export async function updateRequestWithItems(
 - [x] Bugs críticos corrigidos.
 - [x] Gestão de usuários implementada.
 - [ ] CI passando no GitHub Actions.
-- [ ] README e ARCHITECTURE atualizados.
+- [x] README e ARCHITECTURE atualizados.
 
 ---
 
