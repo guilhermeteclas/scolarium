@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, type-check, banco, testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Variáveis exigidas em tempo de build pelo cliente Supabase.
+      # Os testes usam mocks (MSW/spies) e não alcançam este endpoint.
+      VITE_SUPABASE_URL: http://localhost:54321
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-anon-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        # `lint:check` = `eslint .` (sem --fix), para que problemas quebrem o CI.
+        run: npm run lint:check
+
+      - name: Formatação
+        run: npm run format:check
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+
+      - name: Subir Supabase local
+        run: supabase start
+
+      - name: Aplicar migrations e seed
+        run: npm run supabase:reset
+
+      - name: Verificar status dos serviços
+        run: supabase status
+
+      - name: Testes
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+
+      - name: Parar Supabase
+        if: always()
+        run: supabase stop --no-backup
