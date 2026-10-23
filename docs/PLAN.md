@@ -8,6 +8,13 @@
 > - Arquitetura alvo: **Camadas (Repository → Service → Composable → View)**
 > - Validação: **Valibot** (leve, tree-shakeable, nativo no ecossistema Vue)
 > - Testes: **Vitest** + **@vue/test-utils** + **MSW** para mocks de API
+>
+> **Status de execução (22/10/2026):**
+> - ✅ Concluídas: 1.1–1.5, 2.1–2.2, 3.1–3.4, 4.1–4.3, 5.1–5.2, 6.1–6.2
+> - ⏳ Em validação: 6.3 (workflow criado; aguardando o primeiro run no GitHub Actions)
+> - ⬜ Pendentes: 6.4, 7.1, 7.2
+> - ⚠️ Pendência técnica: restam 8 casts `as unknown as` em `src/api/repositories/`
+>   (queries com join), contrariando o critério "sem casts forçados".
 
 ---
 
@@ -145,9 +152,9 @@ scolarium/
 - `@vitest/coverage-v8` — cobertura
 
 **Critérios de aceitação:**
-- [ ] `npm install` executa sem conflitos.
-- [ ] `npm run build` passa.
-- [ ] `npm run type-check` passa (mesmo com casts antigos).
+- [x] `npm install` executa sem conflitos.
+- [x] `npm run build` passa.
+- [x] `npm run type-check` passa (mesmo com casts antigos).
 
 ---
 
@@ -167,9 +174,9 @@ scolarium/
    ```
 
 **Critérios de aceitação:**
-- [ ] `supabase start` sobe Postgres, Auth, API, Studio e Storage.
-- [ ] `supabase status` mostra todos os serviços healthy.
-- [ ] Frontend conecta ao Supabase local sem erros.
+- [x] `supabase start` sobe Postgres, Auth, API, Studio e Storage.
+- [x] `supabase status` mostra todos os serviços healthy.
+- [x] Frontend conecta ao Supabase local sem erros.
 
 ---
 
@@ -192,9 +199,9 @@ scolarium/
 4. Remover/deprecar `supabase/policies.sql` antigo.
 
 **Critérios de aceitação:**
-- [ ] `supabase db reset` aplica migrations sem erros.
-- [ ] Tabelas aparecem no Supabase Studio.
-- [ ] Foreign keys e constraints estão corretos.
+- [x] `supabase db reset` aplica migrations sem erros.
+- [x] Tabelas aparecem no Supabase Studio.
+- [x] Foreign keys e constraints estão corretos.
 
 ---
 
@@ -213,8 +220,8 @@ scolarium/
 - 3 pedidos em status variados
 
 **Critérios de aceitação:**
-- [ ] `supabase db reset` popula dados automaticamente.
-- [ ] É possível fazer login com qualquer um dos 3 perfis.
+- [x] `supabase db reset` popula dados automaticamente.
+- [x] É possível fazer login com qualquer um dos 3 perfis.
 
 ---
 
@@ -241,9 +248,9 @@ scolarium/
 4. Substituir `src/lib/supabaseClient.ts` por `src/api/client.ts`.
 
 **Critérios de aceitação:**
-- [ ] `src/types/database.types.ts` existe e é regenerável.
-- [ ] Cliente Supabase é tipado em todo o projeto.
-- [ ] Build continua passando.
+- [x] `src/types/database.types.ts` existe e é regenerável.
+- [x] Cliente Supabase é tipado em todo o projeto.
+- [x] Build continua passando.
 
 ---
 
@@ -326,9 +333,9 @@ export interface RequestItem {
 ```
 
 **Critérios de aceitação:**
-- [ ] Tipos de domínio criados e exportados via barrel (`src/types/index.ts`).
-- [ ] Nomenclatura camelCase para propriedades JavaScript/TypeScript.
-- [ ] snake_case usado apenas na camada de repository (conversão explícita).
+- [x] Tipos de domínio criados e exportados via barrel (`src/types/index.ts`).
+- [x] Nomenclatura camelCase para propriedades JavaScript/TypeScript.
+- [x] snake_case usado apenas na camada de repository (conversão explícita).
 
 ---
 
@@ -385,9 +392,9 @@ export const RequestWithItemsCreateSchema = v.object({
 ```
 
 **Critérios de aceitação:**
-- [ ] Todos os formulários têm schemas correspondentes.
-- [ ] Tipos inferidos dos schemas (`v.InferOutput<typeof Schema>`) são usados como DTOs.
-- [ ] Validação ocorre tanto na UI quanto na camada de service.
+- [x] Todos os formulários têm schemas correspondentes.
+- [x] Tipos inferidos dos schemas (`v.InferOutput<typeof Schema>`) são usados como DTOs.
+- [ ] Validação ocorre tanto na UI quanto na camada de service. ⚠️ *(services validam regras de negócio, mas não reaplicam o schema Valibot)*
 
 ---
 
@@ -430,8 +437,8 @@ function toInventory(row: Tables<'inventories'>): Inventory {
 ```
 
 **Critérios de aceitação:**
-- [ ] Nenhum `supabase.from(...)` fora da pasta `src/api/repositories/`.
-- [ ] Composables antigos (`useInventories`, `useItems`, etc.) ainda funcionam como adapters temporários.
+- [x] Nenhum `supabase.from(...)` fora da pasta `src/api/repositories/`.
+- [x] Composables antigos (`useInventories`, `useItems`, etc.) ainda funcionam como adapters temporários.
 
 ---
 
@@ -468,9 +475,9 @@ export async function updateRequestWithItems(
 ```
 
 **Critérios de aceitação:**
-- [ ] Services são a única camada que orquestra repositories.
-- [ ] Composables não chamam repositories diretamente.
-- [ ] Regras de estoque estão em `item.service.ts` ou `request.service.ts`, não em views.
+- [x] Services são a única camada que orquestra repositories.
+- [x] Composables não chamam repositories diretamente.
+- [x] Regras de estoque estão em `item.service.ts` ou `request.service.ts`, não em views.
 
 ---
 
@@ -492,9 +499,9 @@ export async function updateRequestWithItems(
 - Exportar `{ loading, error, data, actions }`.
 
 **Critérios de aceitação:**
-- [ ] Todos os composables usam services.
-- [ ] Views importam apenas composables e componentes.
-- [ ] `usePermissions` permanece como fonte única de permissões de UI.
+- [x] Todos os composables usam services.
+- [x] Views importam apenas composables e componentes.
+- [x] `usePermissions` permanece como fonte única de permissões de UI.
 
 ---
 
@@ -510,9 +517,9 @@ export async function updateRequestWithItems(
 - `UsersView.vue`: implementar listagem de usuários e edição de roles.
 
 **Critérios de aceitação:**
-- [ ] Nenhuma view com mais de 250 linhas de script.
-- [ ] Nenhuma view importa `supabase` diretamente.
-- [ ] Typos e mensagens erradas corrigidos.
+- [x] Nenhuma view com mais de 250 linhas de script.
+- [x] Nenhuma view importa `supabase` diretamente.
+- [x] Typos e mensagens erradas corrigidos.
 
 ---
 
@@ -530,9 +537,9 @@ export async function updateRequestWithItems(
 - Validar role via schema.
 
 **Critérios de aceitação:**
-- [ ] Admin acessa `/users`.
-- [ ] Lista mostra nome, e-mail, telefone, role.
-- [ ] Admin pode editar role.
+- [x] Admin acessa `/users`.
+- [x] Lista mostra nome, e-mail, telefone, role.
+- [x] Admin pode editar role.
 
 ---
 
@@ -547,23 +554,23 @@ export async function updateRequestWithItems(
 - Verificar se `manager` pode deletar itens conforme RLS (sim, dos seus inventários).
 
 **Critérios de aceitação:**
-- [ ] Permissões do frontend espelham as policies do Supabase.
-- [ ] Rotas protegidas usam `usePermissions` e router guards de forma consistente.
+- [x] Permissões do frontend espelham as policies do Supabase.
+- [x] Rotas protegidas usam `usePermissions` e router guards de forma consistente.
 
 ---
 
 #### Tarefa 4.3: Corrigir bugs identificados
 
 **Lista de bugs:**
-- [ ] `LoginView.vue`: redirecionamento após erro de login.
-- [ ] `ItemsView.vue`: mensagem de delete fala “Inventário” em vez de “Item”.
-- [ ] `InventoriesView.vue`: typo “inventátrio”.
-- [ ] `useItems.ts`: renomear `createItems` → `createItem`.
-- [ ] `ItemsView.vue`: `itemWhithId` → `itemWithId`.
-- [ ] `RequestsView.vue`: validar datas de início < término.
+- [x] `LoginView.vue`: redirecionamento após erro de login.
+- [x] `ItemsView.vue`: mensagem de delete fala “Inventário” em vez de “Item”.
+- [x] `InventoriesView.vue`: typo “inventátrio”.
+- [x] `useItems.ts`: renomear `createItems` → `createItem`.
+- [x] `ItemsView.vue`: `itemWhithId` → `itemWithId`.
+- [x] `RequestsView.vue`: validar datas de início < término.
 
 **Critérios de aceitação:**
-- [ ] Todos os bugs acima corrigidos e revisados.
+- [x] Todos os bugs acima corrigidos e revisados.
 
 ---
 
@@ -578,8 +585,8 @@ export async function updateRequestWithItems(
 - `EntityModal.vue` — modal de criação/edição genérica.
 
 **Critérios de aceitação:**
-- [ ] Formulários de Inventário, Item e Request usam componentes reutilizáveis.
-- [ ] Mensagens de erro de validação aparecem abaixo de cada campo.
+- [x] Formulários de Inventário, Item e Request usam componentes reutilizáveis.
+- [x] Mensagens de erro de validação aparecem abaixo de cada campo.
 
 ---
 
@@ -590,8 +597,8 @@ export async function updateRequestWithItems(
 - `StatusBadge.vue` — badge de status de pedido.
 
 **Critérios de aceitação:**
-- [ ] Tabelas de Inventário e Itens usam `EntityDataTable`.
-- [ ] Badges de status de pedido usam `StatusBadge`.
+- [x] Tabelas de Inventário e Itens usam `EntityDataTable`.
+- [x] Badges de status de pedido usam `StatusBadge`.
 
 ---
 
@@ -613,7 +620,7 @@ export async function updateRequestWithItems(
    ```
 
 **Critérios de aceitação:**
-- [ ] `npm run test:run` executa sem erros (mesmo sem testes ainda).
+- [x] `npm run test:run` executa sem erros (mesmo sem testes ainda).
 
 ---
 
@@ -627,8 +634,8 @@ export async function updateRequestWithItems(
 5. **Componentes:** testar renderização de `PageHeader`, `ErrorState`, `ConfirmDeleteDialog`.
 
 **Critérios de aceitação:**
-- [ ] Cobertura mínima de 60% em utils, schemas e services.
-- [ ] Testes de pedidos cobrem cenários de retirada/devolução.
+- [x] Cobertura mínima de 60% em utils, schemas e services.
+- [x] Testes de pedidos cobrem cenários de retirada/devolução.
 
 ---
 
@@ -646,7 +653,7 @@ export async function updateRequestWithItems(
 - Rodar `npm run build`.
 
 **Critérios de aceitação:**
-- [ ] CI passa em push/PR para `main` e `develop`.
+- [ ] CI passa em push/PR para `main` e `develop`. ⏳ *(workflow criado; em validação)*
 
 ---
 
@@ -765,13 +772,13 @@ export async function updateRequestWithItems(
 
 ## 7. Critérios Gerais de Aceitação do Projeto
 
-- [ ] `npm install`, `npm run dev`, `npm run build`, `npm run test:run` e `npm run lint` funcionam.
-- [ ] Supabase local sobe e popula dados com `supabase db reset`.
-- [ ] Tipos do Supabase são gerados e usados sem casts forçados.
-- [ ] Código organizado em camadas (repository/service/composable/view).
-- [ ] Todos os formulários validados com Valibot.
-- [ ] Bugs críticos corrigidos.
-- [ ] Gestão de usuários implementada.
+- [x] `npm install`, `npm run dev`, `npm run build`, `npm run test:run` e `npm run lint` funcionam.
+- [x] Supabase local sobe e popula dados com `supabase db reset`.
+- [ ] Tipos do Supabase são gerados e usados sem casts forçados. ⚠️ *(restam 8 casts `as unknown as` em repositories, em queries com join)*
+- [x] Código organizado em camadas (repository/service/composable/view).
+- [x] Todos os formulários validados com Valibot.
+- [x] Bugs críticos corrigidos.
+- [x] Gestão de usuários implementada.
 - [ ] CI passando no GitHub Actions.
 - [ ] README e ARCHITECTURE atualizados.
 
