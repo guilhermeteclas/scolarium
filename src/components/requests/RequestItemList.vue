@@ -79,14 +79,20 @@ watch(
           <span class="text-lg font-medium">
             {{ item.item?.name ?? '—' }}
           </span>
-          <span class="text-lg font-semibold text-primary-600 dark:text-primary-400 whitespace-nowrap">
+          <span
+            class="text-lg font-semibold text-primary-600 dark:text-primary-400 whitespace-nowrap"
+          >
             {{ item.quantity }} unidade(s)
           </span>
         </div>
 
         <div class="flex gap-4 text-sm text-surface-500 dark:text-surface-400">
-          <span>Retirado: <span class="font-medium">{{ item.checkedOut || '-' }}</span></span>
-          <span>Devolvido: <span class="font-medium">{{ item.returned || '-' }}</span></span>
+          <span
+            >Retirado: <span class="font-medium">{{ item.checkedOut || '-' }}</span></span
+          >
+          <span
+            >Devolvido: <span class="font-medium">{{ item.returned || '-' }}</span></span
+          >
         </div>
       </div>
     </div>

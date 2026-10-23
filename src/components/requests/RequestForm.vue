@@ -9,11 +9,7 @@ import { safeParse } from 'valibot'
 import { useRequests } from '@/composables/useRequests'
 import { useItems } from '@/composables/useItems'
 import { usePermissions } from '@/composables/usePermissions'
-import {
-  RequestWithItemsCreateSchema,
-  fieldErrorsFor,
-  type FieldErrors,
-} from '@/schemas'
+import { RequestWithItemsCreateSchema, fieldErrorsFor, type FieldErrors } from '@/schemas'
 import { STATUS_OPTIONS } from '@/utils/requestStatus'
 
 import EntityModal from '@/components/forms/EntityModal.vue'
@@ -81,9 +77,7 @@ const searchedItems = ref<Item[]>([])
 const itemSearchLoading = ref(false)
 
 const canEditStatus = computed(() => canEditRequestStatus)
-const canEditItems = computed(() =>
-  canEditRequestItems(isEditMode.value, form.status),
-)
+const canEditItems = computed(() => canEditRequestItems(isEditMode.value, form.status))
 
 const modalTitle = computed(() =>
   isEditMode.value ? `Editar - Pedido ${props.request?.id}` : 'Criar Novo Pedido',
@@ -261,49 +255,98 @@ async function handleSubmit() {
     <form class="space-y-6" @submit.prevent="handleSubmit">
       <!-- Seção 1: Dados Principais -->
       <div class="border-b border-surface-200 dark:border-surface-700 pb-4">
-        <h3 class="text-lg font-semibold mb-4 text-surface-900 dark:text-surface-0">Informações do Pedido</h3>
+        <h3 class="text-lg font-semibold mb-4 text-surface-900 dark:text-surface-0">
+          Informações do Pedido
+        </h3>
 
         <!-- Detalhes -->
-        <FormTextarea id="details" label="Detalhes" v-model="form.details" :rows="3"
-          placeholder="Descrição do pedido (opcional)" :error="fieldErrors.details" />
+        <FormTextarea
+          id="details"
+          label="Detalhes"
+          v-model="form.details"
+          :rows="3"
+          placeholder="Descrição do pedido (opcional)"
+          :error="fieldErrors.details"
+        />
 
         <!-- Datas -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField id="reservation_start" label="Data de Início" required
-            :error="fieldErrors.reservationStart">
-            <Calendar id="reservation_start" v-model="form.reservationStart" showTime hourFormat="24"
-              dateFormat="dd/mm/yy" panelClass="min-w-[12rem]"
+          <FormField
+            id="reservation_start"
+            label="Data de Início"
+            required
+            :error="fieldErrors.reservationStart"
+          >
+            <Calendar
+              id="reservation_start"
+              v-model="form.reservationStart"
+              showTime
+              hourFormat="24"
+              dateFormat="dd/mm/yy"
+              panelClass="min-w-[12rem]"
               class="w-full"
               :aria-invalid="fieldErrors.reservationStart ? 'true' : undefined"
-              :aria-describedby="fieldErrors.reservationStart ? 'reservation_start-error' : undefined" />
+              :aria-describedby="
+                fieldErrors.reservationStart ? 'reservation_start-error' : undefined
+              "
+            />
           </FormField>
 
-          <FormField id="reservation_end" label="Data de Término" required :error="fieldErrors.reservationEnd">
-            <Calendar id="reservation_end" v-model="form.reservationEnd" showTime hourFormat="24"
-              dateFormat="dd/mm/yy" panelClass="min-w-[12rem]"
+          <FormField
+            id="reservation_end"
+            label="Data de Término"
+            required
+            :error="fieldErrors.reservationEnd"
+          >
+            <Calendar
+              id="reservation_end"
+              v-model="form.reservationEnd"
+              showTime
+              hourFormat="24"
+              dateFormat="dd/mm/yy"
+              panelClass="min-w-[12rem]"
               class="w-full"
               :aria-invalid="fieldErrors.reservationEnd ? 'true' : undefined"
-              :aria-describedby="fieldErrors.reservationEnd ? 'reservation_end-error' : undefined" />
+              :aria-describedby="fieldErrors.reservationEnd ? 'reservation_end-error' : undefined"
+            />
           </FormField>
         </div>
 
         <!-- Status (apenas edição) -->
-        <FormSelect v-if="isEditMode" id="status" label="Status" v-model="form.status"
-          :options="STATUS_OPTIONS" option-label="label" option-value="value"
-          :disabled="!canEditStatus" :error="fieldErrors.status" />
+        <FormSelect
+          v-if="isEditMode"
+          id="status"
+          label="Status"
+          v-model="form.status"
+          :options="STATUS_OPTIONS"
+          option-label="label"
+          option-value="value"
+          :disabled="!canEditStatus"
+          :error="fieldErrors.status"
+        />
       </div>
 
       <!-- Seção 2: Itens do Pedido -->
       <div class="border-b border-surface-200 dark:border-surface-700 pb-4">
-        <h3 class="text-lg font-semibold mb-4 text-surface-900 dark:text-surface-0">Itens do Pedido</h3>
+        <h3 class="text-lg font-semibold mb-4 text-surface-900 dark:text-surface-0">
+          Itens do Pedido
+        </h3>
 
         <!-- Busca de Itens -->
         <FormField id="itemSearch" label="Pesquisar Item" :error="fieldErrors.items">
-          <AutoComplete id="itemSearch" v-model="itemSearch" :suggestions="searchedItems"
-            @complete="handleSearchItems" :loading="itemSearchLoading" placeholder="Digite o nome do item..."
-            option-label="name" @item-select="addItemToRequest($event.value)" :disabled="!canEditItems"
+          <AutoComplete
+            id="itemSearch"
+            v-model="itemSearch"
+            :suggestions="searchedItems"
+            @complete="handleSearchItems"
+            :loading="itemSearchLoading"
+            placeholder="Digite o nome do item..."
+            option-label="name"
+            @item-select="addItemToRequest($event.value)"
+            :disabled="!canEditItems"
             class="w-full border border-surface-300 dark:border-surface-600 rounded-lg bg-surface-0 dark:bg-surface-800"
-            input-class="w-full px-3 py-2 bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none" />
+            input-class="w-full px-3 py-2 bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-0 focus:outline-none"
+          />
           <p v-if="!canEditItems" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
             ⚠️ Itens só podem ser adicionados/removidos quando o status for "Aberto"
           </p>
@@ -315,9 +358,13 @@ async function handleSubmit() {
             {{ selectedItems.size }} item(ns) selecionado(s)
           </div>
           <div class="space-y-2">
-            <div v-for="[itemId, { item, quantity, checkedOut, returned }] of Array.from(selectedItems.entries())"
+            <div
+              v-for="[itemId, { item, quantity, checkedOut, returned }] of Array.from(
+                selectedItems.entries(),
+              )"
               :key="itemId"
-              class="flex items-center justify-between gap-3 p-3 bg-surface-100 dark:bg-surface-800 rounded-lg">
+              class="flex items-center justify-between gap-3 p-3 bg-surface-100 dark:bg-surface-800 rounded-lg"
+            >
               <div class="flex-1">
                 <p class="font-medium text-surface-900 dark:text-surface-0">{{ item.name }}</p>
                 <p class="text-xs text-surface-500 dark:text-surface-400">
@@ -327,26 +374,52 @@ async function handleSubmit() {
               <div class="flex items-center gap-2">
                 <div class="flex flex-col items-center mx-2">
                   <label class="text-xs">Solicitados</label>
-                  <input type="number" :value="quantity" :disabled="!canEditItems"
-                    @input="updateItemQuantity(itemId, parseInt(($event.target as HTMLInputElement).value))" min="1"
-                    class="w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-0 text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+                  <input
+                    type="number"
+                    :value="quantity"
+                    :disabled="!canEditItems"
+                    @input="
+                      updateItemQuantity(
+                        itemId,
+                        parseInt(($event.target as HTMLInputElement).value),
+                      )
+                    "
+                    min="1"
+                    class="w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-0 text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
                 </div>
-                <template v-if="isEditMode && (form.status === 'ready' || form.status === 'completed')">
+                <template
+                  v-if="isEditMode && (form.status === 'ready' || form.status === 'completed')"
+                >
                   <div class="flex flex-col items-center mx-2">
                     <label class="text-xs">Retirados</label>
-                    <input type="number" :value="checkedOut" min="0"
+                    <input
+                      type="number"
+                      :value="checkedOut"
+                      min="0"
                       @input="updateCheckedOut(itemId, ($event.target as HTMLInputElement).value)"
-                      class="w-16 px-2 py-1 border border-primary-300 dark:border-primary-600 rounded bg-surface-0 dark:bg-surface-900 text-primary-900 dark:text-primary-200 text-center focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      class="w-16 px-2 py-1 border border-primary-300 dark:border-primary-600 rounded bg-surface-0 dark:bg-surface-900 text-primary-900 dark:text-primary-200 text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
                   </div>
                   <div class="flex flex-col items-center mx-2">
                     <label class="text-xs">Devolvidos</label>
-                    <input type="number" :value="returned" min="0"
+                    <input
+                      type="number"
+                      :value="returned"
+                      min="0"
                       @input="updateReturned(itemId, ($event.target as HTMLInputElement).value)"
-                      class="w-16 px-2 py-1 border border-green-300 dark:border-green-600 rounded bg-surface-0 dark:bg-surface-900 text-green-900 dark:text-green-200 text-center focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      class="w-16 px-2 py-1 border border-green-300 dark:border-green-600 rounded bg-surface-0 dark:bg-surface-900 text-green-900 dark:text-green-200 text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
                   </div>
                 </template>
-                <Button icon="pi pi-trash" severity="danger" text size="small" :disabled="!canEditItems"
-                  @click="removeItemFromRequest(itemId)" />
+                <Button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  text
+                  size="small"
+                  :disabled="!canEditItems"
+                  @click="removeItemFromRequest(itemId)"
+                />
               </div>
             </div>
           </div>

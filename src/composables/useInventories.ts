@@ -30,7 +30,8 @@ export function useInventories() {
   const updateInventory = (inventoryId: number, data: { name: string; description: string }) =>
     run(() => inventoryService.updateInventory(inventoryId, data))
 
-  const deleteInventory = (inventoryId: number) => run(() => inventoryService.deleteInventory(inventoryId))
+  const deleteInventory = (inventoryId: number) =>
+    run(() => inventoryService.deleteInventory(inventoryId))
 
   return {
     loading,

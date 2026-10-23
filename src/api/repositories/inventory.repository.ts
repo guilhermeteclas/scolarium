@@ -57,7 +57,10 @@ export async function createInventory(data: {
   return created as { id: number }
 }
 
-export async function linkProfileToInventory(inventoryId: number, profileId: string): Promise<void> {
+export async function linkProfileToInventory(
+  inventoryId: number,
+  profileId: string,
+): Promise<void> {
   const { error } = await supabase
     .from('user_inventories')
     .insert([{ inventory_id: inventoryId, profile_id: profileId }])

@@ -5,13 +5,7 @@
 import type { Item } from './item'
 
 export type RequestStatus =
-  | 'open'
-  | 'in_progress'
-  | 'pending'
-  | 'ready'
-  | 'completed'
-  | 'rejected'
-  | 'cancelled'
+  'open' | 'in_progress' | 'pending' | 'ready' | 'completed' | 'rejected' | 'cancelled'
 
 export interface Request {
   id: number

@@ -26,9 +26,9 @@ const fmt = formatDate
 
 <template>
   <div class="w-full md:w-1/2 px-3 mb-4">
-    <div class="cardPretty group h-full w-full p-5 rounded-xl border border-surface-200 dark:border-surface-700
-          bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))]
-          hover:border-primary-400 transition-all">
+    <div
+      class="cardPretty group h-full w-full p-5 rounded-xl border border-surface-200 dark:border-surface-700 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] hover:border-primary-400 transition-all"
+    >
       <div class="flex items-start justify-between mb-3">
         <span class="text-xl font-medium">Pedido {{ request.id }}</span>
         <StatusBadge :status="request.status" />
@@ -56,14 +56,33 @@ const fmt = formatDate
       </div>
 
       <div class="mt-2 flex justify-end">
-        <Button class="m-2" icon="pi pi-eye" severity="success" size="large" aria-label="Itens"
-          @click="$emit('view', request.id)" />
+        <Button
+          class="m-2"
+          icon="pi pi-eye"
+          severity="success"
+          size="large"
+          aria-label="Itens"
+          @click="$emit('view', request.id)"
+        />
 
-        <Button class="m-2" icon="pi pi-pencil" severity="info" size="large" aria-label="Editar"
-          @click="$emit('edit', request)" />
+        <Button
+          class="m-2"
+          icon="pi pi-pencil"
+          severity="info"
+          size="large"
+          aria-label="Editar"
+          @click="$emit('edit', request)"
+        />
 
-        <Button v-if="canDelete" class="m-2" icon="pi pi-trash" severity="danger" size="large"
-          aria-label="Deletar" @click="$emit('delete', request)" />
+        <Button
+          v-if="canDelete"
+          class="m-2"
+          icon="pi pi-trash"
+          severity="danger"
+          size="large"
+          aria-label="Deletar"
+          @click="$emit('delete', request)"
+        />
       </div>
     </div>
   </div>

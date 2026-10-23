@@ -100,29 +100,52 @@ async function handleSaveRole(user: UserView) {
 
 <template>
   <div class="space-y-4">
-    <PageHeader title="Usuários" subtitle="Gerencie os papéis e acessos do sistema" icon="pi-users"
-      icon-class="text-indigo-600 dark:text-indigo-400" icon-bg-class="bg-indigo-100 dark:bg-indigo-900/30" />
+    <PageHeader
+      title="Usuários"
+      subtitle="Gerencie os papéis e acessos do sistema"
+      icon="pi-users"
+      icon-class="text-indigo-600 dark:text-indigo-400"
+      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/30"
+    />
 
     <Card class="shadow-sm border border-surface-200 dark:border-surface-700">
       <template #content>
-        <EntityDataTable :data="users" :columns="columns" :loading="loading" :error="error"
-          empty-message="Nenhum usuário encontrado." actions-width="16rem" @retry="loadUsers">
-          <template #cell-firstName="{ data }">
-            {{ data.firstName }} {{ data.lastName }}
-          </template>
+        <EntityDataTable
+          :data="users"
+          :columns="columns"
+          :loading="loading"
+          :error="error"
+          empty-message="Nenhum usuário encontrado."
+          actions-width="16rem"
+          @retry="loadUsers"
+        >
+          <template #cell-firstName="{ data }"> {{ data.firstName }} {{ data.lastName }} </template>
 
           <template #cell-role="{ data }">
-            {{ ROLE_OPTIONS.find(o => o.value === data.role)?.label ?? data.role }}
+            {{ ROLE_OPTIONS.find((o) => o.value === data.role)?.label ?? data.role }}
           </template>
 
           <template #actions="{ data }">
             <div class="flex items-center gap-2">
-              <Dropdown v-model="roleDrafts[data.id]" :options="ROLE_OPTIONS" optionLabel="label"
-                optionValue="value" placeholder="Papel" class="w-40" :disabled="!canManageUsers"
-                :aria-label="`Papel de ${data.firstName ?? data.email}`" />
-              <Button v-if="canManageUsers" icon="pi pi-check" severity="success" size="small"
-                :disabled="!hasChanges(data)" aria-label="Salvar papel"
-                @click="handleSaveRole(data)" />
+              <Dropdown
+                v-model="roleDrafts[data.id]"
+                :options="ROLE_OPTIONS"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Papel"
+                class="w-40"
+                :disabled="!canManageUsers"
+                :aria-label="`Papel de ${data.firstName ?? data.email}`"
+              />
+              <Button
+                v-if="canManageUsers"
+                icon="pi pi-check"
+                severity="success"
+                size="small"
+                :disabled="!hasChanges(data)"
+                aria-label="Salvar papel"
+                @click="handleSaveRole(data)"
+              />
             </div>
           </template>
         </EntityDataTable>

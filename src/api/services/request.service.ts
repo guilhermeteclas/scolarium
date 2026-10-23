@@ -37,8 +37,7 @@ export async function fetchRequests(): Promise<Request[]> {
   await authRepository.requireSession()
   const requests = await requestRepository.fetchRequests()
   return requests.sort(
-    (a, b) =>
-      (REQUEST_STATUS_ORDER[a.status] ?? 99) - (REQUEST_STATUS_ORDER[b.status] ?? 99),
+    (a, b) => (REQUEST_STATUS_ORDER[a.status] ?? 99) - (REQUEST_STATUS_ORDER[b.status] ?? 99),
   )
 }
 

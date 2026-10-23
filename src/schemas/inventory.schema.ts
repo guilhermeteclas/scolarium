@@ -10,10 +10,7 @@ export const InventoryCreateSchema = v.object({
     v.minLength(1, 'O campo Nome é obrigatório'),
     v.maxLength(120, 'Máximo de 120 caracteres'),
   ),
-  description: v.pipe(
-    v.string(),
-    v.maxLength(500, 'Máximo de 500 caracteres'),
-  ),
+  description: v.pipe(v.string(), v.maxLength(500, 'Máximo de 500 caracteres')),
 })
 
 export const InventoryUpdateSchema = InventoryCreateSchema

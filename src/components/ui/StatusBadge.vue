@@ -12,10 +12,7 @@ defineProps<{
 </script>
 
 <template>
-  <span
-    class="text-xl font-semibold px-2 py-1 rounded-md"
-    :class="getStatusClass(status)"
-  >
+  <span class="text-xl font-semibold px-2 py-1 rounded-md" :class="getStatusClass(status)">
     {{ getStatusLabel(status) }}
   </span>
 </template>

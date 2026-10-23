@@ -13,11 +13,7 @@ export {
 } from './dateFormatter'
 
 // User utilities
-export {
-  getFullName,
-  getInitials,
-  getDisplayName,
-} from './userFormatter'
+export { getFullName, getInitials, getDisplayName } from './userFormatter'
 
 // Request status utilities
 export {

@@ -19,9 +19,7 @@ export function fieldErrorsFor(
 ): FieldErrors {
   const result: FieldErrors = {}
   for (const field of fields) {
-    const issue = issues.find((i) =>
-      i.path?.some((p) => (p as { key?: unknown }).key === field),
-    )
+    const issue = issues.find((i) => i.path?.some((p) => (p as { key?: unknown }).key === field))
     if (issue) {
       result[field] = issue.message
     }

@@ -63,11 +63,17 @@ export function formatRelativeDate(date?: string | Date): string {
   if (absMinutes < 1) {
     return 'agora'
   } else if (absMinutes < 60) {
-    return isPast ? `há ${absMinutes} minuto${absMinutes > 1 ? 's' : ''}` : `em ${absMinutes} minuto${absMinutes > 1 ? 's' : ''}`
+    return isPast
+      ? `há ${absMinutes} minuto${absMinutes > 1 ? 's' : ''}`
+      : `em ${absMinutes} minuto${absMinutes > 1 ? 's' : ''}`
   } else if (absHours < 24) {
-    return isPast ? `há ${absHours} hora${absHours > 1 ? 's' : ''}` : `em ${absHours} hora${absHours > 1 ? 's' : ''}`
+    return isPast
+      ? `há ${absHours} hora${absHours > 1 ? 's' : ''}`
+      : `em ${absHours} hora${absHours > 1 ? 's' : ''}`
   } else if (absDays < 30) {
-    return isPast ? `há ${absDays} dia${absDays > 1 ? 's' : ''}` : `em ${absDays} dia${absDays > 1 ? 's' : ''}`
+    return isPast
+      ? `há ${absDays} dia${absDays > 1 ? 's' : ''}`
+      : `em ${absDays} dia${absDays > 1 ? 's' : ''}`
   } else {
     return formatDate(date)
   }

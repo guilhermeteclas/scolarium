@@ -60,9 +60,7 @@ export type RequestItemInputDto = v.InferOutput<typeof RequestItemInputSchema>
  */
 export const RequestWithItemsCreateSchema = v.pipe(
   v.object({
-    details: v.nullable(
-      v.pipe(v.string(), v.maxLength(2000, 'Máximo de 2000 caracteres')),
-    ),
+    details: v.nullable(v.pipe(v.string(), v.maxLength(2000, 'Máximo de 2000 caracteres'))),
     reservationStart: reservationDate('Data de Início'),
     reservationEnd: reservationDate('Data de Término'),
     status: v.picklist(
@@ -79,10 +77,7 @@ export const RequestWithItemsCreateSchema = v.pipe(
     ['reservationEnd'],
   ),
   v.forward(
-    v.check(
-      (input) => input.items.length > 0,
-      'Selecione ao menos um item para o pedido',
-    ),
+    v.check((input) => input.items.length > 0, 'Selecione ao menos um item para o pedido'),
     ['items'],
   ),
 )

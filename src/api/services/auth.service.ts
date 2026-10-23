@@ -23,7 +23,10 @@ function toProfile(row: authRepository.ProfileRow | null): Profile | null {
   }
 }
 
-export async function signIn(email: string, password: string): Promise<{ user: User; profile: Profile | null }> {
+export async function signIn(
+  email: string,
+  password: string,
+): Promise<{ user: User; profile: Profile | null }> {
   const user = await authRepository.signInWithPassword(email, password)
   const profile = toProfile(await authRepository.fetchProfileRow(user.id))
   return { user, profile }

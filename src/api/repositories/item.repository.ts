@@ -33,9 +33,9 @@ export async function fetchItems(): Promise<ItemWithInventory[]> {
     .select(`id, name, type, quantity, inventory_id, inventory:inventories ( id, name )`)
     .order('id', { ascending: false })
   if (error) throw new Error(error.message)
-  return ((data ?? []) as unknown as Array<
-    ItemRow & { inventory: { id: number; name: string } | null }
-  >).map((row) => ({
+  return (
+    (data ?? []) as unknown as Array<ItemRow & { inventory: { id: number; name: string } | null }>
+  ).map((row) => ({
     ...toItem(row),
     inventory: row.inventory ?? null,
   }))

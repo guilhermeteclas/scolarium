@@ -100,29 +100,53 @@ const handleDelete = async () => {
 <template>
   <div class="space-y-4">
     <!-- header -->
-    <PageHeader title="Pedidos" subtitle="Controle de requisições e movimentações de materiais" icon="pi-list"
-      icon-class="text-purple-600 dark:text-purple-400" icon-bg-class="bg-purple-100 dark:bg-purple-900/30"
-      button-label="Novo Pedido" button-icon="pi pi-plus" button-severity="success" @action="openForm()" />
+    <PageHeader
+      title="Pedidos"
+      subtitle="Controle de requisições e movimentações de materiais"
+      icon="pi-list"
+      icon-class="text-purple-600 dark:text-purple-400"
+      icon-bg-class="bg-purple-100 dark:bg-purple-900/30"
+      button-label="Novo Pedido"
+      button-icon="pi pi-plus"
+      button-severity="success"
+      @action="openForm()"
+    />
 
-    <Card v-if="canViewRequests" class="shadow-sm border border-surface-200 dark:border-surface-700">
+    <Card
+      v-if="canViewRequests"
+      class="shadow-sm border border-surface-200 dark:border-surface-700"
+    >
       <template #content>
         <LoadingState v-if="loading" />
         <ErrorState v-else-if="error" :error="error" @retry="loadRequests" />
 
         <div v-else>
-          <DataView :value="requests" layout="grid" :rows="6" paginatorTemplate="PrevPageLink PageLinks NextPageLink"
-            class="rounded-xl overflow-hidden">
-
+          <DataView
+            :value="requests"
+            layout="grid"
+            :rows="6"
+            paginatorTemplate="PrevPageLink PageLinks NextPageLink"
+            class="rounded-xl overflow-hidden"
+          >
             <!-- GRID -->
             <template #grid="{ items }">
               <div class="flex flex-wrap -mx-3 m-10 mb-5">
-                <RequestCard v-for="r in items" :key="r.id" :request="r" :can-delete="canDeleteRequests"
-                  @view="openItems(r.id)" @edit="openForm(r)" @delete="confirmDelete(r)" />
+                <RequestCard
+                  v-for="r in items"
+                  :key="r.id"
+                  :request="r"
+                  :can-delete="canDeleteRequests"
+                  @view="openItems(r.id)"
+                  @edit="openForm(r)"
+                  @delete="confirmDelete(r)"
+                />
               </div>
             </template>
 
             <template #empty>
-              <div class="text-center p-6 text-surface-500 dark:text-surface-400">Nenhuma solicitação encontrada.</div>
+              <div class="text-center p-6 text-surface-500 dark:text-surface-400">
+                Nenhuma solicitação encontrada.
+              </div>
             </template>
           </DataView>
         </div>
@@ -133,9 +157,17 @@ const handleDelete = async () => {
 
     <RequestForm v-model:visible="showFormDialog" :request="editingRequest" @saved="loadRequests" />
 
-    <ConfirmDeleteDialog v-model:visible="displayConfirmDelete"
-      :message="requestToDelete ? `Você realmente deseja deletar o pedido <b class='text-red-500'>${requestToDelete.id}</b>? Esta ação é irreversível.` : ''"
-      confirm-label="Sim, Deletar" cancel-label="Não" @confirm="handleDelete" />
+    <ConfirmDeleteDialog
+      v-model:visible="displayConfirmDelete"
+      :message="
+        requestToDelete
+          ? `Você realmente deseja deletar o pedido <b class='text-red-500'>${requestToDelete.id}</b>? Esta ação é irreversível.`
+          : ''
+      "
+      confirm-label="Sim, Deletar"
+      cancel-label="Não"
+      @confirm="handleDelete"
+    />
   </div>
 </template>
 

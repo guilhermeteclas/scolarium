@@ -38,9 +38,10 @@ const TYPE_OPTIONS: TypeOption[] = [
   { label: 'Equipamento', value: 'equipment' },
 ]
 
-const TYPE_LABEL = Object.fromEntries(
-  TYPE_OPTIONS.map(o => [o.value, o.label])
-) as Record<ItemType, string>
+const TYPE_LABEL = Object.fromEntries(TYPE_OPTIONS.map((o) => [o.value, o.label])) as Record<
+  ItemType,
+  string
+>
 
 function typeLabel(t: Item['type']): string {
   return t ? TYPE_LABEL[t as ItemType] : '—'
@@ -214,66 +215,134 @@ const handleDelete = async () => {
     })
   }
 }
-
 </script>
 
 <template>
   <div class="space-y-4">
     <!-- Header separado do Card -->
-    <PageHeader title="Itens" subtitle="Gerencie os materiais escolares do almoxarifado" icon="pi-box"
-      icon-class="text-green-600 dark:text-green-400" icon-bg-class="bg-green-100 dark:bg-green-900/30">
+    <PageHeader
+      title="Itens"
+      subtitle="Gerencie os materiais escolares do almoxarifado"
+      icon="pi-box"
+      icon-class="text-green-600 dark:text-green-400"
+      icon-bg-class="bg-green-100 dark:bg-green-900/30"
+    >
       <template #actions>
-        <Button v-if="canCreateItems" label="Adicionar Item" icon="pi pi-plus" severity="success" @click="openModal" />
+        <Button
+          v-if="canCreateItems"
+          label="Adicionar Item"
+          icon="pi pi-plus"
+          severity="success"
+          @click="openModal"
+        />
       </template>
     </PageHeader>
 
     <!-- Tabela de dados -->
-    <div class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-sm border border-surface-200 dark:border-surface-700">
-      <EntityDataTable :data="items" :columns="columns" :loading="loading" :error="error"
-        empty-message="Nenhum item encontrado." @retry="loadItems">
+    <div
+      class="bg-surface-0 dark:bg-surface-900 rounded-xl p-6 shadow-sm border border-surface-200 dark:border-surface-700"
+    >
+      <EntityDataTable
+        :data="items"
+        :columns="columns"
+        :loading="loading"
+        :error="error"
+        empty-message="Nenhum item encontrado."
+        @retry="loadItems"
+      >
         <template #cell-type="{ data }">
           {{ typeLabel(data.type) }}
         </template>
 
         <template #actions="{ data }">
           <div class="flex gap-2">
-            <Button v-if="canEditItems" icon="pi pi-pencil" severity="info" size="small"
-              @click="handleEdit(data)" aria-label="Editar" />
-            <Button v-if="canDeleteItems" icon="pi pi-trash" severity="danger" size="small"
-              @click="confirmDelete(data)" aria-label="Deletar" />
+            <Button
+              v-if="canEditItems"
+              icon="pi pi-pencil"
+              severity="info"
+              size="small"
+              @click="handleEdit(data)"
+              aria-label="Editar"
+            />
+            <Button
+              v-if="canDeleteItems"
+              icon="pi pi-trash"
+              severity="danger"
+              size="small"
+              @click="confirmDelete(data)"
+              aria-label="Deletar"
+            />
           </div>
         </template>
       </EntityDataTable>
     </div>
 
-    <EntityModal v-model:visible="displayModal" :title="isEditing ? 'Editar Item' : 'Adicionar Novo Item'"
-      @save="handleSave">
+    <EntityModal
+      v-model:visible="displayModal"
+      :title="isEditing ? 'Editar Item' : 'Adicionar Novo Item'"
+      @save="handleSave"
+    >
       <div class="p-fluid">
         <FormField id="name" label="Nome" required :error="fieldErrors.name">
-          <InputText id="name" v-model="newItem.name" class="w-full" :required="true"
+          <InputText
+            id="name"
+            v-model="newItem.name"
+            class="w-full"
+            :required="true"
             :aria-invalid="fieldErrors.name ? 'true' : undefined"
-            :aria-describedby="fieldErrors.name ? 'name-error' : undefined" />
+            :aria-describedby="fieldErrors.name ? 'name-error' : undefined"
+          />
         </FormField>
 
-        <FormSelect id="type" label="Tipo" required v-model="newItem.type" :options="TYPE_OPTIONS"
-          option-label="label" option-value="value" placeholder="Selecione o tipo" :error="fieldErrors.type" />
+        <FormSelect
+          id="type"
+          label="Tipo"
+          required
+          v-model="newItem.type"
+          :options="TYPE_OPTIONS"
+          option-label="label"
+          option-value="value"
+          placeholder="Selecione o tipo"
+          :error="fieldErrors.type"
+        />
 
         <FormField id="quantity" label="Quantidade" required :error="fieldErrors.quantity">
-          <InputNumber id="quantity" v-model="newItem.quantity" class="w-full" :required="true"
+          <InputNumber
+            id="quantity"
+            v-model="newItem.quantity"
+            class="w-full"
+            :required="true"
             :use-grouping="false"
             :aria-invalid="fieldErrors.quantity ? 'true' : undefined"
-            :aria-describedby="fieldErrors.quantity ? 'quantity-error' : undefined" />
+            :aria-describedby="fieldErrors.quantity ? 'quantity-error' : undefined"
+          />
         </FormField>
 
-        <FormSelect id="inventary" label="Inventário" required v-model="newItem.inventoryId" :options="inventories"
-          option-label="name" option-value="id" placeholder="Selecione um inventário"
-          :error="fieldErrors.inventoryId" />
+        <FormSelect
+          id="inventary"
+          label="Inventário"
+          required
+          v-model="newItem.inventoryId"
+          :options="inventories"
+          option-label="name"
+          option-value="id"
+          placeholder="Selecione um inventário"
+          :error="fieldErrors.inventoryId"
+        />
       </div>
     </EntityModal>
 
-    <ConfirmDeleteDialog v-model:visible="displayConfirmDelete"
-      :message="itemWithId ? `Você realmente deseja deletar o item <b class='text-red-500'>${itemWithId.name}</b>? Esta ação é irreversível.` : ''"
-      confirm-label="Sim, Deletar" cancel-label="Não" @confirm="handleDelete" />
+    <ConfirmDeleteDialog
+      v-model:visible="displayConfirmDelete"
+      :message="
+        itemWithId
+          ? `Você realmente deseja deletar o item <b class='text-red-500'>${itemWithId.name}</b>? Esta ação é irreversível.`
+          : ''
+      "
+      confirm-label="Sim, Deletar"
+      cancel-label="Não"
+      @confirm="handleDelete"
+    />
   </div>
 </template>
 
